@@ -2,11 +2,14 @@
 
 
 int main(){
-	char data[] = "hello myfriend";
 	Server myServer;
+	myServer.initInfo();
 	myServer.child.myCreateSocket("127.0.0.1", 5002);
 	myServer.child.myConnect("127.0.0.1", 5001);
-	myServer.initInfo();
+	
+	myServer.child.inithandshake();
+	
+	char data[] = "hello myfriend";
 	myServer.sendfile(data);
 	return 0;
 }
@@ -54,7 +57,7 @@ int Server::sendfile(const char *data){
 			++segmentcnt;
 		}
 		datalen = datalen - child.MSS;
-		child.mySend(Packet(packetType::packet_data, this->child, segmentdata));	
+		child.mySend(Packet(packetType::packet_data, this->child, segmentdata));
 	}
 	return segmentcnt;
 }

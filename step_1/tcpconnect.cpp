@@ -40,6 +40,9 @@ Packet::Packet(packetType type, Tcpconnect tcp, const char* indata){
 			else dataSize = tcp.MSS;
 			strncpy(this->data, indata, dataSize);
 			this->header.checksum = dataSize;
+			this->header.ACK = false;
+			this->header.SYN = false;
+			this->header.FIN = false;
 			break;
 		case packet_ack:
 			this->header.ACK = true;
@@ -127,12 +130,26 @@ Packet Tcpconnect::myRecv(){
 	//decide what to do
 	switch(recv_packet.packet_type()){
 		case packet_syn:
-			cout << "----start three-way handshake----" << endl;
+			cout << "=====start three-way handshake=====" << endl;
+			cout << "Receive a packet(SYN) from " << addr(destSocket) << endl;
+			cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
+			break;	
+		case packet_ack:
+			cout << "Receive a packet(ACK) from " << addr(destSocket) << endl;
+			cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
+			break;
+		case packet_synack:
+			cout << "Receive a packet(SYNACK) from " << addr(destSocket) << endl;
+			cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
+			break;
 		case packet_fin:
-			cout << "Received a " << recv_packet.packet_type() << "from " << addr(destSocket);
+			cout << "Receive a packet(FIN) from " << addr(destSocket) << endl;
+			cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
+			break;
 		case packet_data:
-			cout << "receive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
-		break;
+			cout << "Receive a packet(DATA) from " << addr(destSocket) << endl;
+			cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
+			break;
 	}
 	return recv_packet;
 }
