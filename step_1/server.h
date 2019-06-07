@@ -19,6 +19,6 @@ class Server {
 		Server();
 		void initInfo();
 		void printStatus();
-		int sendfile(const char *data);  //return how many segments
+		int sendfile(const char *data, const int dataSize = 0);  //return how many segments
 };
 

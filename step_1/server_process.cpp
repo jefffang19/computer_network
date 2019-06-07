@@ -2,7 +2,6 @@
 
 void Server_process::inithandshake(){
 	bool endhs = false;
-	this->seqNum = START_SEQNUM_S;
 	
 	while(!endhs){
 		Packet recv_packet = myRecv();

@@ -1,5 +1,16 @@
 #include "client.h"
 
+vector<unsigned char> out;
+
+void wfile(){
+	ofstream outf("1-out.mp4", ios::binary);
+	char temp[out.size()];
+	for(int i=0;i<out.size();++i){
+		temp[i] = out[i];
+	}
+	copy(temp,temp+out.size(),ostreambuf_iterator<char>(outf));
+	outf.close();
+}
 
 int main(){
 	Client myclient;
@@ -13,6 +24,9 @@ int main(){
 	myclient.child.inithandshake();
 	
 	myclient.recvfile();
+	
+	wfile();
+	
 	return 0;
 }
 
@@ -27,16 +41,24 @@ void Client::initInfo(){
 }
 void Client::recvfile(){
 	bool isEnd = false;
-	cout << "Listening\n";
-	Packet recv_packet = child.myRecv();
-	cout << "Receive file from " << child.addr(child.destSocket) << endl;
-	if(recv_packet.packet_type() == packet_data) {
-			// if new ack then recv, else ignore
-			if(child.isNewAck(recv_packet)){
-				strcpy(fileBuffer, recv_packet.data);
-				child.updateNum(recv_packet);
-			}
-			child.mySend(Packet(packet_ack,this->child,(char*)NULL));
+
+	while(!isEnd){
+		cout << "Listening\n";
+		Packet recv_packet = child.myRecv();
+		//cout << "Receive file from " << child.addr(child.destSocket) << endl;
+		if(recv_packet.packet_type() == packet_data) {
+				// if new ack then recv, else ignore
+				if(child.isNewAck(recv_packet)){
+					for(int i = 0;i<child.MSS;++i) fileBuffer[i] = recv_packet.data[i];
+					for(int i = 0;i<child.MSS;++i) out.push_back(fileBuffer[i]);
+					child.updateNum(recv_packet);
+				}
+				child.mySend(Packet(packet_ack,this->child,(char*)NULL));
+		}
+		else if(recv_packet.packet_type() == packet_fin){
+			cout << "Receive file complete\n";
+			isEnd = true;
+		}
 	}
-	cout << "got file : " << endl << fileBuffer << endl;
+	cout << "got file len = " << out.size() << "bytes" << endl;
 }

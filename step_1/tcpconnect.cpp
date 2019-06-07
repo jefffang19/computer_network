@@ -23,7 +23,7 @@ Packet::Packet(){
 	strcpy(this->data,"hello world!");
 }
 
-Packet::Packet(packetType type, Tcpconnect tcp, const char* indata){
+Packet::Packet(packetType type, Tcpconnect tcp, const char* indata, int indataSize){
 	this->header.srcPort = tcp.srcSocket.sin_port;
 	this->header.destPort = tcp.destSocket.sin_port;
 	this->header.seqNum = tcp.seqNum;
@@ -35,11 +35,11 @@ Packet::Packet(packetType type, Tcpconnect tcp, const char* indata){
 				fprintf(stderr,"data str is null\n");
 				break;
 			}
-			int dataSize;
-			if(strlen(data) <= tcp.MSS) dataSize = strlen(data);
-			else dataSize = tcp.MSS;
-			strncpy(this->data, indata, dataSize);
-			this->header.checksum = dataSize;
+			/*int dataSize;
+			if(strlen(data) <= tcp.MSS) dataSize = strlen(indata);
+			else dataSize = tcp.MSS;*/
+			for(int i=0;i<indataSize;++i) this->data[i] = indata[i];
+			this->header.checksum = 1;
 			this->header.ACK = false;
 			this->header.SYN = false;
 			this->header.FIN = false;
@@ -119,7 +119,7 @@ void Tcpconnect::mySend(Packet packet){
 
 void Tcpconnect::updateNum(const Packet recv_packet){
 	this->seqNum = recv_packet.header.ackNum;
-	this->ackNum = recv_packet.header.seqNum + recv_packet.header.checksum;
+	this->ackNum = recv_packet.header.seqNum + 1;
 }
 
 bool Tcpconnect::isNewAck(const Packet recv_packet){

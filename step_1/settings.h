@@ -29,6 +29,7 @@ using namespace std;
 const int default_RTT = 150;  //150ms
 const int default_THRESHOLD = 65535;  //64K
 const int default_MSS = 1024; //1K
+const int default_header_size = 20; //20 bytes
 const int default_BUFFER_SIZE = 32768; //32K
 
 

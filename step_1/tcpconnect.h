@@ -26,7 +26,7 @@ class Packet {
 		Tcpheader header;
 		char data[default_MSS];
 		Packet();
-		Packet(packetType type, Tcpconnect tcp, const char* indata);
+		Packet(packetType type, Tcpconnect tcp, const char* indata, int indataSize = 0);
 		packetType packet_type();
 };
 
