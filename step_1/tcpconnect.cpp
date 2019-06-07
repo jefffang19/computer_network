@@ -29,6 +29,7 @@ Packet::Packet(packetType type, Tcpconnect tcp, const char* indata, int indataSi
 	this->header.seqNum = tcp.seqNum;
 	this->header.ackNum = tcp.ackNum;
 	this->header.recv_wnd = tcp.recv_wnd;
+	this->header.checksum = 1;
 	switch(type){
 		case packet_data:
 			if(indata==NULL){
@@ -39,7 +40,6 @@ Packet::Packet(packetType type, Tcpconnect tcp, const char* indata, int indataSi
 			if(strlen(data) <= tcp.MSS) dataSize = strlen(indata);
 			else dataSize = tcp.MSS;*/
 			for(int i=0;i<indataSize;++i) this->data[i] = indata[i];
-			this->header.checksum = 1;
 			this->header.ACK = false;
 			this->header.SYN = false;
 			this->header.FIN = false;
@@ -48,28 +48,24 @@ Packet::Packet(packetType type, Tcpconnect tcp, const char* indata, int indataSi
 			this->header.ACK = true;
 			this->header.SYN = false;
 			this->header.FIN = false;
-			this->header.checksum = 1;
 			strcpy(this->data,"ACK");
 			break;
 		case packet_syn:
 			this->header.ACK = false;
 			this->header.SYN = true;
 			this->header.FIN = false;
-			this->header.checksum = 1;
 			strcpy(this->data,"SYN");
 			break;
 		case packet_synack:
 			this->header.ACK = true;
 			this->header.SYN = true;
 			this->header.FIN = false;
-			this->header.checksum = 1;
 			strcpy(this->data,"SYNACK");
 			break;
 		case packet_fin:
 			this->header.ACK = false;
 			this->header.SYN = false;
 			this->header.FIN = true;
-			this->header.checksum = 1;
 			strcpy(this->data,"FIN");
 			break;
 	} 

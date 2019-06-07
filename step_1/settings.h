@@ -18,6 +18,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
@@ -31,7 +32,11 @@ const int default_THRESHOLD = 65535;  //64K
 const int default_MSS = 1024; //1K
 const int default_header_size = 20; //20 bytes
 const int default_BUFFER_SIZE = 32768; //32K
+const int num_of_clients = 4;
 
-
+const char server_ip[] = "127.0.0.1";
+const int server_port = 5001; 
+const char client_ip[] = "127.0.0.1";
+const int client_port[num_of_clients] = { 1717, 2588, 3354, 1234 };
 #endif
 

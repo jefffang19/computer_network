@@ -10,18 +10,22 @@ void wfile(){
 	}
 	copy(temp,temp+out.size(),ostreambuf_iterator<char>(outf));
 	outf.close();
+	cout << "1-out.mp4 created , size :" << out.size() << " bytes\n"; 
 }
 
 int main(){
 	Client myclient;
 	//set src ip and port
-	myclient.child.myCreateSocket("127.0.0.1",5001);
+	myclient.child.myCreateSocket(client_ip,client_port[0]);
 	myclient.initInfo();
 	
 	//init connection
-	myclient.child.myConnect("127.0.0.1",5002);
+	myclient.child.myConnect(server_ip,server_port);
 	
 	myclient.child.inithandshake();
+	
+	//here you need to switch to new port
+	myclient.child.myConnect(server_ip,server_port+1);
 	
 	myclient.recvfile();
 	

@@ -2,8 +2,15 @@
 
 class Server_process : public Tcpconnect {
 	public:
+		pid_t childpid[num_of_clients];
+		int childcnt;
+		bool masterchild;
 		void inithandshake();
 		void endhandshake();
+		Server_process(){
+			childcnt = 0;
+			masterchild = false;
+		}
 };
 
 class Server {

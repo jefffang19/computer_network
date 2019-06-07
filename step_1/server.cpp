@@ -16,7 +16,7 @@ int rfile(){
 
 int main(){
 	Server myServer;
-	myServer.child.myCreateSocket("127.0.0.1", 5002);
+	myServer.child.myCreateSocket(server_ip, server_port);
 	myServer.initInfo();
 	
 	myServer.child.inithandshake();
@@ -26,11 +26,18 @@ int main(){
 	for(int i=0;i<123456;++i) data[i]='a';
 	*/
 	
-	//read video 1.mp4
-	int vsize;
-	vsize = rfile();
+	//if is master child, keep listen for new client's SYN
+	while(myServer.child.masterchild) myServer.child.inithandshake();
+	//if not master child, send video file
 	
-	myServer.sendfile(vfile,vsize);
+	if(!myServer.child.masterchild){cout << "debug\n";
+		//read video 1.mp4
+		int vsize;
+		vsize = rfile();
+	
+		myServer.sendfile(vfile,vsize);
+	}
+	
 	return 0;
 }
 
@@ -40,6 +47,7 @@ Server::Server(){
 	this->recv_wnd = default_BUFFER_SIZE;
 	this->threshold = default_THRESHOLD;
 	this->dupACKcnt = 0;
+	this->child.masterchild = true; //the child of server class is master child
 	state = tcpstate::tcp_none;
 	strcpy(fileBuffer,"hello world");
 }
