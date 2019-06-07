@@ -3,9 +3,10 @@
 
 int main(){
 	Client myclient;
-	myclient.initInfo();
 	//set src ip and port
 	myclient.child.myCreateSocket("127.0.0.1",5001);
+	myclient.initInfo();
+	
 	//init connection
 	myclient.child.myConnect("127.0.0.1",5002);
 	

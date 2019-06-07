@@ -1,5 +1,4 @@
 #include "server.h"
-#define START_SEQNUM_S 393
 
 void Server_process::inithandshake(){
 	bool endhs = false;

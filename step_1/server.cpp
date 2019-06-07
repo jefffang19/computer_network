@@ -3,9 +3,8 @@
 
 int main(){
 	Server myServer;
-	myServer.initInfo();
 	myServer.child.myCreateSocket("127.0.0.1", 5002);
-	myServer.child.myConnect("127.0.0.1", 5001);
+	myServer.initInfo();
 	
 	myServer.child.inithandshake();
 	

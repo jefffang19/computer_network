@@ -100,12 +100,21 @@ void Tcpconnect::myConnect(const char* destip, int destport){
     this->destSocket.sin_family = AF_INET;
     this->destSocket.sin_addr.s_addr = inet_addr(destip);
     this->destSocket.sin_port = destport;
-    printf("connected to socket\nSrcIP: %s\nSrcPort: %d\n",destip,destport);
+    printf("Set destination socket\nDestIP: %s\nDestPort: %d\n",destip,destport);
 }
 
 void Tcpconnect::mySend(Packet packet){
 	sendto(hostfd, &packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, sizeof(destSocket) );
-	cout << "Packet sent\nData: " << packet.data << endl ;
+	
+	map<packetType,string> pt;
+	pt[packet_syn] = "SYN";
+	pt[packet_ack] = "ACK";
+	pt[packet_synack] = "SYNACK";
+	pt[packet_fin] = "FIN";
+	pt[packet_data] = "DATA";
+	cout << "Send a packet(" << pt[packet.packet_type()] << ") to " << addr(destSocket) << endl;
+	
+	//cout << "Packet sent\nData: " << packet.data << endl ;
 }
 
 void Tcpconnect::updateNum(const Packet recv_packet){
@@ -127,30 +136,18 @@ Packet Tcpconnect::myRecv(){
 	usleep( (this->RTT >> 1) * 1000);
 	//UDP recv
 	recvfrom(hostfd, &recv_packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, &packetSize);
-	//decide what to do
-	switch(recv_packet.packet_type()){
-		case packet_syn:
-			cout << "=====start three-way handshake=====" << endl;
-			cout << "Receive a packet(SYN) from " << addr(destSocket) << endl;
-			cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
-			break;	
-		case packet_ack:
-			cout << "Receive a packet(ACK) from " << addr(destSocket) << endl;
-			cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
-			break;
-		case packet_synack:
-			cout << "Receive a packet(SYNACK) from " << addr(destSocket) << endl;
-			cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
-			break;
-		case packet_fin:
-			cout << "Receive a packet(FIN) from " << addr(destSocket) << endl;
-			cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
-			break;
-		case packet_data:
-			cout << "Receive a packet(DATA) from " << addr(destSocket) << endl;
-			cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
-			break;
-	}
+	
+	map<packetType,string> pt;
+	pt[packet_syn] = "SYN";
+	pt[packet_ack] = "ACK";
+	pt[packet_synack] = "SYNACK";
+	pt[packet_fin] = "FIN";
+	pt[packet_data] = "DATA";
+	packetType recvpt = recv_packet.packet_type();
+	if( recvpt == packet_syn) cout << "=====start three-way handshake=====" << endl;
+	cout << "Receive a packet(" << pt[recvpt] << ") from " << addr(destSocket) << endl;
+	cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
+			
 	return recv_packet;
 }
 
