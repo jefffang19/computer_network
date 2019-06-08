@@ -20,7 +20,7 @@ int main(){
 	for(int i = 0;i < num_of_files;++i) cin >> request_file[i];
 	
 	//set src ip and port
-	myclient.child.myCreateSocket(client_ip, client_port[numbth_client]);
+	myclient.child.myCreateSocket(client_ip, client_port[numbth_client-1]);
 	myclient.initInfo();
 	
 	//init connection
