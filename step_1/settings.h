@@ -37,6 +37,6 @@ const int num_of_clients = 4;
 const char server_ip[] = "127.0.0.1";
 const int server_port = 5001; 
 const char client_ip[] = "127.0.0.1";
-const int client_port[num_of_clients] = { 1717, 2588, 3354, 1234 };
+const int client_port[] = {1264, 3245, 9546, 7456}; 
 #endif
 

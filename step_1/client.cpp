@@ -1,24 +1,32 @@
 #include "client.h"
 
-vector<unsigned char> out;
-int numbth_client;  //you can be 1~4
+vector<unsigned char> out; 
+int num_of_files;
+int request_file[5];
+int numbth_client;
 
 void wfile();
 
 int main(){
 	srand(time(NULL));
 	
-	cout << "what number is this client? ";
-	cin >> numbth_client;
 	Client myclient;
+	
+	cout << "input # client ";
+	cin >> numbth_client;
+	cout << "request video file number ";
+	cin >> num_of_files;
+	cout << "request video file number ";
+	for(int i = 0;i < num_of_files;++i) cin >> request_file[i];
+	
 	//set src ip and port
-	myclient.child.myCreateSocket(client_ip,client_port[numbth_client-1]);
+	myclient.child.myCreateSocket(client_ip, client_port[numbth_client]);
 	myclient.initInfo();
 	
 	//init connection
 	myclient.child.myConnect(server_ip,server_port);
 	
-	myclient.child.inithandshake(numbth_client);
+	myclient.child.inithandshake(numbth_client, num_of_files, request_file);
 	
 	
 	myclient.recvfile();

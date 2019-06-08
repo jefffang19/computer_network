@@ -35,7 +35,7 @@ int main(){
 	while(myServer.child.masterchild) myServer.child.inithandshake();
 	//if not master child, send video file
 	
-	if(!myServer.child.masterchild){cout << "debug\n";
+	if(!myServer.child.masterchild){
 		//read video 1.mp4
 		int vsize;
 		vsize = rfile();
