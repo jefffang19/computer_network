@@ -4,6 +4,7 @@ class Server_process : public Tcpconnect {
 	public:
 		pid_t childpid[num_of_clients];
 		int childcnt;
+		vector<int> req_files;
 		bool masterchild;
 		void inithandshake();
 		void endhandshake();

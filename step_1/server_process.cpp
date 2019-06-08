@@ -2,6 +2,7 @@
 
 void Server_process::inithandshake(){
 	bool endhs = false;
+	req_files.clear();
 	
 	cout << "Listening to client\n";
 	while(!endhs){
@@ -20,6 +21,7 @@ void Server_process::inithandshake(){
 			case packetType::packet_ack:
 				if(isNewAck(recv_packet)){
 					updateNum(recv_packet);
+					for(int i=0;i<recv_packet.data[0];++i) req_files.push_back(recv_packet.data[i+1] - '0');
 					endhs = true; //complete 3way handshake
 				}
 				break;

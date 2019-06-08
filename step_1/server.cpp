@@ -6,9 +6,9 @@ char vfile[MAXVIDEOSIZE];
 Server myServer;
 
 //return buffer size
-int rfile(){ 
+int rfile(int num){ 
 	stringstream ss;
-	ss << myServer.child.childcnt + 1;
+	ss << num;
 	string n = ss.str();
 	ifstream in( n + ".mp4", ios::binary);
 	vector<unsigned char> buffer(istreambuf_iterator<char>(in), {});
@@ -38,9 +38,10 @@ int main(){
 	if(!myServer.child.masterchild){
 		//read video 1.mp4
 		int vsize;
-		vsize = rfile();
-	
-		myServer.sendfile(vfile,vsize);
+		for(int i=0;i<myServer.child.req_files.size();++i){
+			vsize = rfile(myServer.child.req_files[i]);
+			myServer.sendfile(vfile,vsize);
+		}
 	}
 	
 	return 0;
