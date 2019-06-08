@@ -42,6 +42,7 @@ void Server_process::inithandshake(){
 		port = port * 10 + (unparse_str[i] - '0');
 	
 	masterchild = false;//this will become important to determine who is parent later in server.cpp
+	if(childcnt>4){ cout << "already has 4 clients!"; return; } 
 	//now fork a child
 	pid_t pid;
 	int status;
@@ -51,7 +52,7 @@ void Server_process::inithandshake(){
 		case 0:
 			cout << "As a child, I am connected	to: " << addr(destSocket) << endl;
 			//remember to differ your child's port
-			myCreateSocket(server_ip,server_port+1);
+			myCreateSocket(server_ip,server_port+childcnt);
 			break;
 		//parent
 		default:

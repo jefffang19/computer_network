@@ -1,7 +1,7 @@
 #include "client.h"
 #define START_SEQNUM 3553
 
-void Client_process::inithandshake(){
+void Client_process::inithandshake(int numbth_client){
 	cout << "=====start the three-way handshake=====" << endl;
 	this->seqNum = START_SEQNUM;
 	//send syn packet to server
@@ -17,5 +17,7 @@ void Client_process::inithandshake(){
 		}
 	}
 	cout << "=====Complete the three-way handshake=====" << endl;
+	//here you need to switch to new port
+	myConnect(server_ip,server_port+numbth_client);
 }
 

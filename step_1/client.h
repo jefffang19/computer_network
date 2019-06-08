@@ -2,10 +2,12 @@
 #define CLIENT_H
 #include "tcpconnect.h"
 
+
+
 class Client_process : public Tcpconnect {
 	public:
 		Client_process() : Tcpconnect() { }
-		void inithandshake();
+		void inithandshake(int numbth_client);
 		void endhandshake();
 };
 

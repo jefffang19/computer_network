@@ -1,31 +1,23 @@
 #include "client.h"
 
 vector<unsigned char> out;
+int numbth_client;  //you can be 1~4
 
-void wfile(){
-	ofstream outf("1-out.mp4", ios::binary);
-	char temp[out.size()];
-	for(int i=0;i<out.size();++i){
-		temp[i] = out[i];
-	}
-	copy(temp,temp+out.size(),ostreambuf_iterator<char>(outf));
-	outf.close();
-	cout << "1-out.mp4 created , size :" << out.size() << " bytes\n"; 
-}
+void wfile();
 
 int main(){
+	cout << "what number is this client? ";
+	cin >> numbth_client;
 	Client myclient;
 	//set src ip and port
-	myclient.child.myCreateSocket(client_ip,client_port[0]);
+	myclient.child.myCreateSocket(client_ip,client_port[numbth_client-1]);
 	myclient.initInfo();
 	
 	//init connection
 	myclient.child.myConnect(server_ip,server_port);
 	
-	myclient.child.inithandshake();
+	myclient.child.inithandshake(numbth_client);
 	
-	//here you need to switch to new port
-	myclient.child.myConnect(server_ip,server_port+1);
 	
 	myclient.recvfile();
 	
@@ -34,6 +26,19 @@ int main(){
 	return 0;
 }
 
+void wfile(){
+	stringstream ss;
+	ss << numbth_client;
+	string n = ss.str();
+	ofstream outf( n + "-out.mp4", ios::binary);
+	char temp[out.size()];
+	for(int i=0;i<out.size();++i){
+		temp[i] = out[i];
+	}
+	copy(temp,temp+out.size(),ostreambuf_iterator<char>(outf));
+	outf.close();
+	cout << n << "-out.mp4 created , size :" << out.size() << " bytes\n"; 
+}
 
 void Client::initInfo(){
 	cout << "====================" << endl <<

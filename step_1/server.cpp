@@ -1,12 +1,18 @@
 #include "server.h"
+#define MAXVIDEOSIZE 1000000
 
+char vfile[MAXVIDEOSIZE];
 
-char vfile[1000000];
+Server myServer;
+
 //return buffer size
 int rfile(){ 
-	ifstream in("1.mp4", ios::binary);
+	stringstream ss;
+	ss << myServer.child.childcnt + 1;
+	string n = ss.str();
+	ifstream in( n + ".mp4", ios::binary);
 	vector<unsigned char> buffer(istreambuf_iterator<char>(in), {});
-	cout << "1.mp4 " << "size: " << buffer.size() << " bytes" <<  endl;
+	cout << n << ".mp4 " << "size: " << buffer.size() << " bytes" <<  endl;
 	for(int i=0;i<buffer.size();++i){
 		vfile[i] = buffer[i];
 	}
@@ -15,7 +21,6 @@ int rfile(){
 }
 
 int main(){
-	Server myServer;
 	myServer.child.myCreateSocket(server_ip, server_port);
 	myServer.initInfo();
 	
