@@ -3,7 +3,7 @@
 
 void Client_process::inithandshake(int numbth_client){
 	cout << "=====start the three-way handshake=====" << endl;
-	int START_SEQNUM = (rand() % 8888 + 1);
+	int START_SEQNUM = (rand() % 10000 + 1);
 	
 	this->seqNum = START_SEQNUM;
 	//send syn packet to server
