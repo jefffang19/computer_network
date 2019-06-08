@@ -67,6 +67,11 @@ void Client::recvfile(){
 				}
 				child.mySend(Packet(packet_ack,this->child,(char*)NULL));
 		}
+		//when the ack packet of threeway handshake loss
+		else if(recv_packet.packet_type() == packet_synack){
+			cout << "Server did not complete threeway handshake\ntry to fix\n";
+			child.mySend(Packet(packet_ack,this->child,(char*)NULL));
+		}
 		else if(recv_packet.packet_type() == packet_fin){
 			cout << "Receive file complete\n";
 			isEnd = true;

@@ -52,7 +52,7 @@ class Tcpconnect {
 			MSS = default_MSS;
 			RTT = default_RTT;
 			THRESHOLD = default_THRESHOLD;
-			loss = 10;
+			loss = 0.01;
 		}
 };
 
