@@ -6,6 +6,8 @@ int numbth_client;  //you can be 1~4
 void wfile();
 
 int main(){
+	srand(time(NULL));
+	
 	cout << "what number is this client? ";
 	cin >> numbth_client;
 	Client myclient;
