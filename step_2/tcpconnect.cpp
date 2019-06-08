@@ -135,8 +135,11 @@ bool Tcpconnect::isNewAck(const Packet recv_packet){
 Packet Tcpconnect::myRecv(){
 	Packet recv_packet;
 	socklen_t packetSize = sizeof(destSocket);
+	
 	// wait half RTT time before recieve
-	//usleep( (this->RTT >> 1) * 1000);
+	usleep( (this->RTT >> 1) * 1000);
+	
+	
 	//UDP recv
 	recvfrom(hostfd, &recv_packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, &packetSize);
 	

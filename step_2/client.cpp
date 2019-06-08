@@ -6,7 +6,7 @@ int num_of_files;
 int request_file[5];
 
 
-void wfile();
+void wfile(int num);
 
 int main(){
 	srand(time(NULL));
@@ -15,7 +15,7 @@ int main(){
 	
 	cout << "input # client ";
 	cin >> numbth_client;
-	cout << "request video file number ";
+	cout << "request how many files ";
 	cin >> num_of_files;
 	cout << "request video file number ";
 	for(int i = 0;i < num_of_files;++i) cin >> request_file[i];
@@ -27,28 +27,36 @@ int main(){
 	//init connection
 	myclient.child.myConnect(server_ip,server_port);
 	
-	myclient.child.inithandshake(numbth_client);
+	myclient.child.inithandshake(numbth_client, num_of_files, request_file);
 	
 	
-	myclient.recvfile();
-	
-	wfile();
+	//get all the files request
+	for(int i=0;i<num_of_files;++i){
+		myclient.recvfile();
+		wfile(i+1);
+		out.clear();
+	}
 	
 	return 0;
 }
 
-void wfile(){
+void wfile(int num){
 	stringstream ss;
 	ss << numbth_client;
 	string n = ss.str();
-	ofstream outf( n + "-out.mp4", ios::binary);
+	stringstream ss2;
+	ss2 << num;
+	string numf = ss2.str();
+	ofstream outf( "client" + n + "-out" + numf + ".mp4", ios::binary);
+	
 	char temp[out.size()];
 	for(int i=0;i<out.size();++i){
 		temp[i] = out[i];
 	}
 	copy(temp,temp+out.size(),ostreambuf_iterator<char>(outf));
 	outf.close();
-	cout << n << "-out.mp4 created , size :" << out.size() << " bytes\n"; 
+	
+	cout << "client" << n << "-out" << numf << ".mp4 created , size :" << out.size() << " bytes\n";
 }
 
 void Client::initInfo(){
