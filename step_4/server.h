@@ -19,11 +19,6 @@ class Server {
 	public:
 		Server_process child;
 		char fileBuffer[default_BUFFER_SIZE];
-		int cwnd;
-		int recv_wnd;
-		int threshold;
-		int dupACKcnt;
-		tcpstate state;
 		
 		Server();
 		void initInfo();

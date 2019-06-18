@@ -49,13 +49,7 @@ int main(){
 
 
 Server::Server(){
-	this->cwnd = 1;
-	this->recv_wnd = default_BUFFER_SIZE;
-	this->threshold = default_THRESHOLD;
-	this->dupACKcnt = 0;
 	this->child.masterchild = true; //the child of server class is master child
-	state = tcpstate::tcp_begin;
-	strcpy(fileBuffer,"hello world");
 }
 
 void Server::initInfo(){
@@ -71,9 +65,9 @@ void Server::initInfo(){
 
 void Server::printStatus(){
 	cout << "====================" << endl << 
-			"cwnd = " << cwnd << ", " << endl <<
-			"recv_wnd = " << recv_wnd << ", " << endl <<
-			"threshold = " << threshold << endl <<
+			"cwnd = " << child.cwnd << ", " << endl <<
+			"recv_wnd = " << child.recv_wnd << ", " << endl <<
+			"threshold = " << child.ssthresh << endl <<
 			"====================" << endl;
 }
 
@@ -92,11 +86,15 @@ int Server::sendfile(const char *data, const int dataSize){
 		else{
 			for(int i=0;i<child.cwnd;++i) segmentdata[i] = data[i+datastart];
 		}
-		child.mySend(Packet(packetType::packet_data, this->child, segmentdata, child.MSS));
+		
+		Packet tmp(packetType::packet_data, this->child, segmentdata, child.cwnd);
+		tmp.header.recv_wnd = child.cwnd;
+		child.mySend(tmp);
 		++isEvenNum;
 		
 		//you don't need to recv ack on odd times
 		if(isEvenNum%2 == 0){
+			child.isNewACK = false;
 			//now wait for ack from client
 			Packet recv_packet;
 			//use timeoutable recv()
@@ -113,28 +111,29 @@ int Server::sendfile(const char *data, const int dataSize){
 			// if new ack with num+2 then recv
 			if(child.isNewAck(recv_packet) && !timeout){
 				child.updateNum(recv_packet);
-				datalen = datalen - child.MSS;
-				datastart += child.MSS;
+				datalen = datalen - child.cwnd;
+				datastart += child.cwnd;
 				++segmentcnt; 
 			}
 			// if timeout or else
 			else{
-				datalen += child.MSS;
-				datastart -= child.MSS;
+				datalen += child.cwnd;
+				datastart -= child.cwnd;
 				--segmentcnt;
-				child.seqNum--;
+				child.seqNum-=child.cwnd;
 				child.ackNum--;
 				continue; //resend 2 packet
 			}
 		}
 		else{
-			datalen = datalen - child.MSS;
-			datastart += child.MSS;
+			datalen = datalen - child.cwnd;
+			datastart += child.cwnd;
 			++segmentcnt;
-			child.seqNum++;
+			child.seqNum+=child.cwnd;
 			child.ackNum++;
+			child.isNewACK = true;
 		}
-			
+		child.slowstart();	
 	}
 	child.mySend(Packet(packetType::packet_fin, this->child, NULL));
 	return segmentcnt;

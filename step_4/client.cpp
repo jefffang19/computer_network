@@ -81,8 +81,8 @@ void Client::recvfile(){
 		if(recv_packet.packet_type() == packet_data) {
 				// if new ack then recv, else ignore
 				if(child.isNewAck(recv_packet)){
-					for(int i = 0;i<child.MSS;++i) fileBuffer[i] = recv_packet.data[i];
-					for(int i = 0;i<child.MSS;++i) out.push_back(fileBuffer[i]);
+					for(int i = 0;i<recv_packet.header.recv_wnd;++i) fileBuffer[i] = recv_packet.data[i];
+					for(int i = 0;i<recv_packet.header.recv_wnd;++i) out.push_back(fileBuffer[i]);
 					child.updateNum(recv_packet);
 					++isEvenNum;
 				}

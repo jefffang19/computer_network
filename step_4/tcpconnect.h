@@ -56,7 +56,7 @@ class Tcpconnect {
 			MSS = 1;
 			cwnd = MSS;
 			RTT = default_RTT;
-			ssthresh = default_THRESHOLD;
+			ssthresh = 4096; //smaller to let congestion control happen
 			loss = 0.01;
 			status = tcp_begin;
 			dupACK = 0;

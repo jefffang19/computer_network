@@ -108,7 +108,6 @@ void Tcpconnect::mySend(Packet packet, bool safemode){
 	pt[packet_synack] = "SYNACK";
 	pt[packet_fin] = "FIN";
 	pt[packet_data] = "DATA";
-	slowstart();
 	cout << "Send a packet(" << pt[packet.packet_type()] << ") to " << addr(destSocket) << endl;
 	cout << "Send a packet at : " << cwnd << " bytes\n";
 	
@@ -228,18 +227,15 @@ void Tcpconnect::slowstart(){
 				cout << "*****Fast recover*****\n";
 				ssthresh = cwnd / 2;
 				cwnd = ssthresh + 3 * MSS;
-				MSS = cwnd;
 			}
 			else if(isNewACK){
-				cwnd += MSS;
-				MSS = cwnd;
+				cwnd *= 2;
 				dupACK = 0;
 			}
 			else if(isDupACK) ++dupACK;
 			else if(isTimeout){
 				ssthresh = cwnd / 2;
 				cwnd = MSS;
-				MSS = cwnd;
 				dupACK = 0;
 			}
 		break;
@@ -249,7 +245,6 @@ void Tcpconnect::slowstart(){
 				cout << "*****Slow start*****\n";
 				ssthresh = cwnd / 2;
 				cwnd = MSS;
-				MSS = cwnd;
 				dupACK = 0;
 			}
 			else if(isDupACK) ++dupACK;
@@ -258,11 +253,9 @@ void Tcpconnect::slowstart(){
 				cout << "*****Fast recover*****\n";
 				ssthresh = cwnd / 2;
 				cwnd = ssthresh + 3;
-				MSS = cwnd;
 			}
 			else if(isNewACK){
 				cwnd = cwnd + MSS * (MSS / cwnd);
-				MSS = cwnd;
 				dupACK = 0;
 			}
 		break;		
@@ -272,14 +265,12 @@ void Tcpconnect::slowstart(){
 				cout << "*****Slow start*****\n";
 				ssthresh = cwnd / 2;
 				cwnd = 1;
-				MSS = cwnd;
 				dupACK = 0;
 			}
 			else if(isNewACK){
 				this->status = tcp_congestionavoid;
 				cout << "*****Congestion avoidance*****\n";
 				cwnd = ssthresh;
-				MSS = cwnd;
 				dupACK = 0;
 			}
 			else if(isDupACK) cwnd += MSS;
