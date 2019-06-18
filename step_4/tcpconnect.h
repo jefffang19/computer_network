@@ -32,12 +32,14 @@ class Packet {
 
 class Tcpconnect {
 	public:
-		int MSS, RTT, sstresh;
+		int MSS, RTT, ssthresh;
 		int hostfd;
 		struct sockaddr_in srcSocket, destSocket;
 		int seqNum, ackNum, recv_wnd, dupACK, cwnd;
 		double loss; //in percentage
 		tcpstate status;
+		//slow start status
+		bool isTimeout, isNewACK, isDupACK;
 		
 		void myCreateSocket(const char* srcip, int srcport);
 		void myConnect(const char* destip, int destport);
@@ -48,16 +50,19 @@ class Tcpconnect {
 		bool isNewAck(const Packet recv_packet);
 		void updateNum(const Packet recv_packet);
 		bool packetLost();
-		void slowstart(bool timeout, bool newACK);
+		void slowstart();
 		Packet timeout_recv(int timeout_sec, Tcpconnect tcp); //the version of recv with timeout
 		Tcpconnect(){
 			MSS = 1;
 			cwnd = MSS;
 			RTT = default_RTT;
-			sstresh = default_THRESHOLD;
+			ssthresh = default_THRESHOLD;
 			loss = 0.01;
 			status = tcp_begin;
 			dupACK = 0;
+			isTimeout = false;
+			isNewACK = false;
+			isDupACK = false;
 		}
 };
 

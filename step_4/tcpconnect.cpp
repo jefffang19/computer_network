@@ -110,6 +110,7 @@ void Tcpconnect::mySend(Packet packet, bool safemode){
 	pt[packet_data] = "DATA";
 	slowstart();
 	cout << "Send a packet(" << pt[packet.packet_type()] << ") to " << addr(destSocket) << endl;
+	cout << "Send a packet at : " << cwnd << " bytes\n";
 	
 	//now with loss
 	//if no loss
@@ -127,8 +128,16 @@ void Tcpconnect::updateNum(const Packet recv_packet){
 }
 
 bool Tcpconnect::isNewAck(const Packet recv_packet){
-	if(recv_packet.header.ackNum > 0 && recv_packet.header.ackNum <= this->seqNum) return false;
-	else return true;
+	if(recv_packet.header.ackNum > 0 && recv_packet.header.ackNum <= this->seqNum){
+		isNewACK = false;
+		isDupACK = true;
+		return false;
+	}
+	else{
+		isNewACK = true;
+		isDupACK = false;
+		return true;
+	}
 }
 
 
@@ -202,7 +211,7 @@ int Tcpconnect::disconnet(){
 	close(hostfd);
 }
 
-void Tcpconnect::slowstart(bool timeout, bool newACK, bool isdupACK){
+void Tcpconnect::slowstart(){
 	//slowstart
 	switch(this->status){
 		case tcp_begin:
@@ -210,65 +219,73 @@ void Tcpconnect::slowstart(bool timeout, bool newACK, bool isdupACK){
 			cout << "*****Slow start*****\n";
 			break;
 		case tcp_slowstart:
-			if(cwnd>=sstresh){
+			if(cwnd>=ssthresh){
 				this->status = tcp_congestionavoid;
 				cout << "*****Congestion avoidance*****\n";
 			}
-			else if(dupACK==3){
+			else if(isDupACK==3){
 				this->status = tcp_fastrecover;
 				cout << "*****Fast recover*****\n";
-				sstresh = cwnd / 2;
-				cwnd = sstresh + 3 * MSS;
+				ssthresh = cwnd / 2;
+				cwnd = ssthresh + 3 * MSS;
+				MSS = cwnd;
 			}
-			else if(newACK){
+			else if(isNewACK){
 				cwnd += MSS;
+				MSS = cwnd;
 				dupACK = 0;
 			}
-			else if(isdupACK) ++dupACK;
-			else if(timeout){
-				sstresh = cwnd / 2;
+			else if(isDupACK) ++dupACK;
+			else if(isTimeout){
+				ssthresh = cwnd / 2;
 				cwnd = MSS;
+				MSS = cwnd;
 				dupACK = 0;
 			}
 		break;
 		case tcp_congestionavoid:
-			if(timeout){
+			if(isTimeout){
 				this->status = tcp_slowstart;
 				cout << "*****Slow start*****\n";
-				sstresh = cwnd / 2;
+				ssthresh = cwnd / 2;
 				cwnd = MSS;
+				MSS = cwnd;
 				dupACK = 0;
 			}
-			else if(isdupACK) ++dupACK;
-			else if(dupACK==3){
+			else if(isDupACK) ++dupACK;
+			else if(isDupACK==3){
 				this->status = tcp_fastrecover;
 				cout << "*****Fast recover*****\n";
-				sstresh = cwnd / 2;
-				cwnd = sstresh + 3;
+				ssthresh = cwnd / 2;
+				cwnd = ssthresh + 3;
+				MSS = cwnd;
 			}
-			else if(newACK){
+			else if(isNewACK){
 				cwnd = cwnd + MSS * (MSS / cwnd);
+				MSS = cwnd;
 				dupACK = 0;
 			}
 		break;		
 		case tcp_fastrecover:
-			if(timeout){
+			if(isTimeout){
 				this->status = tcp_slowstart;
 				cout << "*****Slow start*****\n";
 				ssthresh = cwnd / 2;
 				cwnd = 1;
-				dupACKcount = 0;
+				MSS = cwnd;
+				dupACK = 0;
 			}
-			else if(newACK){
+			else if(isNewACK){
 				this->status = tcp_congestionavoid;
 				cout << "*****Congestion avoidance*****\n";
-				cwnd = sstresh;
-				dupACKcount = 0;
+				cwnd = ssthresh;
+				MSS = cwnd;
+				dupACK = 0;
 			}
-			else if(dupACK) cwnd += MSS;
+			else if(isDupACK) cwnd += MSS;
 		break;
 	}
-	printf("\tcwnd = %d, rwnd = %d, threshold = %d\n",cwnd,recv_wnd,sstresh);
+	printf("\tcwnd = %d, rwnd = %d, threshold = %d\n",cwnd,recv_wnd,ssthresh);
 	return;
 }
 

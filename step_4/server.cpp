@@ -54,7 +54,7 @@ Server::Server(){
 	this->threshold = default_THRESHOLD;
 	this->dupACKcnt = 0;
 	this->child.masterchild = true; //the child of server class is master child
-	state = tcpstate::tcp_none;
+	state = tcpstate::tcp_begin;
 	strcpy(fileBuffer,"hello world");
 }
 
@@ -62,7 +62,7 @@ void Server::initInfo(){
 	cout << "====================" << endl <<
 			"RTT delay = "	<< child.RTT << "ms" << endl <<
 			"MSS = " << child.MSS << " bytes" << endl <<
-			"threshold = " << child.THRESHOLD << " bytes" << endl <<
+			"threshold = " << child.ssthresh << " bytes" << endl <<
 			"buffer size = "<< default_BUFFER_SIZE << " bytes" << endl <<
 			"loss = "<< child.loss << " %" << endl <<
 			"Server IP & port= " << child.addr(child.srcSocket) << endl <<
@@ -85,12 +85,12 @@ int Server::sendfile(const char *data, const int dataSize){
 		isEvenNum = 0;
 	
 	while(datalen > 0){
-		char segmentdata[child.cwnd+10];  //divide data into segements of length MSS
-		if(datalen < child.MSS){
+		char segmentdata[child.cwnd+5];  //divide data into segements of length MSS
+		if(datalen < child.cwnd){
 			for(int i=0;i<datalen;++i) segmentdata[i] = data[i+datastart];
 		}	
 		else{
-			for(int i=0;i<child.MSS;++i) segmentdata[i] = data[i+datastart];
+			for(int i=0;i<child.cwnd;++i) segmentdata[i] = data[i+datastart];
 		}
 		child.mySend(Packet(packetType::packet_data, this->child, segmentdata, child.MSS));
 		++isEvenNum;
@@ -102,10 +102,12 @@ int Server::sendfile(const char *data, const int dataSize){
 			//use timeoutable recv()
 			//timeout 5 sec
 			bool timeout = false;
+			child.isTimeout = false;
 			try{ recv_packet = child.timeout_recv(5, this->child); }
 			catch(runtime_error &e){
 				cout << e.what() << endl;
 				timeout = true;
+				child.isTimeout = true;
 			}
 
 			// if new ack with num+2 then recv
