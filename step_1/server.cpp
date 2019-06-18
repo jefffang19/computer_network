@@ -22,7 +22,7 @@ int rfile(int num){
 
 int main(){
 	myServer.child.myCreateSocket(server_ip, server_port);
-	myServer.initInfo();
+	myServer.initInfo(); cout << "debug: " << server_port << endl;
 	
 	myServer.child.inithandshake();
 	
