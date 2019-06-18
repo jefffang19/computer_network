@@ -108,6 +108,7 @@ void Tcpconnect::mySend(Packet packet, bool safemode){
 	pt[packet_synack] = "SYNACK";
 	pt[packet_fin] = "FIN";
 	pt[packet_data] = "DATA";
+	slowstart();
 	cout << "Send a packet(" << pt[packet.packet_type()] << ") to " << addr(destSocket) << endl;
 	
 	//now with loss
@@ -201,15 +202,23 @@ int Tcpconnect::disconnet(){
 	close(hostfd);
 }
 
-int Tcpconnect::slowstart(bool timeout, bool newACK, bool isdupACK){
+void Tcpconnect::slowstart(bool timeout, bool newACK, bool isdupACK){
 	//slowstart
 	switch(this->status){
+		case tcp_begin:
+			this->status = tcp_slowstart;
+			cout << "*****Slow start*****\n";
+			break;
 		case tcp_slowstart:
-			if(cwnd>=THRESHOLD) this->status = tcp_congestionavoid;
+			if(cwnd>=sstresh){
+				this->status = tcp_congestionavoid;
+				cout << "*****Congestion avoidance*****\n";
+			}
 			else if(dupACK==3){
 				this->status = tcp_fastrecover;
-				THRESHOLD = cwnd / 2;
-				cwnd = THRESHOLD + 3 * MSS;
+				cout << "*****Fast recover*****\n";
+				sstresh = cwnd / 2;
+				cwnd = sstresh + 3 * MSS;
 			}
 			else if(newACK){
 				cwnd += MSS;
@@ -217,18 +226,50 @@ int Tcpconnect::slowstart(bool timeout, bool newACK, bool isdupACK){
 			}
 			else if(isdupACK) ++dupACK;
 			else if(timeout){
-				THRESHOLD = cwnd / 2;
+				sstresh = cwnd / 2;
 				cwnd = MSS;
 				dupACK = 0;
 			}
 		break;
 		case tcp_congestionavoid:
-			if(timeout) this->status = tcp_slowstart;
-			else if(dupACK==3) this->status = tcp_fastrecover;
+			if(timeout){
+				this->status = tcp_slowstart;
+				cout << "*****Slow start*****\n";
+				sstresh = cwnd / 2;
+				cwnd = MSS;
+				dupACK = 0;
+			}
+			else if(isdupACK) ++dupACK;
+			else if(dupACK==3){
+				this->status = tcp_fastrecover;
+				cout << "*****Fast recover*****\n";
+				sstresh = cwnd / 2;
+				cwnd = sstresh + 3;
+			}
+			else if(newACK){
+				cwnd = cwnd + MSS * (MSS / cwnd);
+				dupACK = 0;
+			}
+		break;		
 		case tcp_fastrecover:
-			if(timeout) this->status = tcp_slowstart;
-			else if(newACK) this->status = tcp_congestionavoid;
+			if(timeout){
+				this->status = tcp_slowstart;
+				cout << "*****Slow start*****\n";
+				ssthresh = cwnd / 2;
+				cwnd = 1;
+				dupACKcount = 0;
+			}
+			else if(newACK){
+				this->status = tcp_congestionavoid;
+				cout << "*****Congestion avoidance*****\n";
+				cwnd = sstresh;
+				dupACKcount = 0;
+			}
+			else if(dupACK) cwnd += MSS;
+		break;
 	}
+	printf("\tcwnd = %d, rwnd = %d, threshold = %d\n",cwnd,recv_wnd,sstresh);
+	return;
 }
 
 string Tcpconnect::addr(const struct sockaddr_in socket){

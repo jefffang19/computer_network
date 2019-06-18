@@ -3,7 +3,7 @@
 #include "settings.h"
 
 //tcp state
-enum tcpstate{ tcp_slowstart, tcp_congestionavoid, tcp_fastrecover };
+enum tcpstate{ tcp_begin, tcp_slowstart, tcp_congestionavoid, tcp_fastrecover };
 //packet type
 enum packetType{ packet_data, packet_ack, packet_syn, packet_synack, packet_fin };
 
@@ -32,7 +32,7 @@ class Packet {
 
 class Tcpconnect {
 	public:
-		int MSS, RTT, THRESHOLD;
+		int MSS, RTT, sstresh;
 		int hostfd;
 		struct sockaddr_in srcSocket, destSocket;
 		int seqNum, ackNum, recv_wnd, dupACK, cwnd;
@@ -48,15 +48,15 @@ class Tcpconnect {
 		bool isNewAck(const Packet recv_packet);
 		void updateNum(const Packet recv_packet);
 		bool packetLost();
-		int slowstart(bool timeout, bool newACK);
+		void slowstart(bool timeout, bool newACK);
 		Packet timeout_recv(int timeout_sec, Tcpconnect tcp); //the version of recv with timeout
 		Tcpconnect(){
 			MSS = 1;
 			cwnd = MSS;
 			RTT = default_RTT;
-			THRESHOLD = default_THRESHOLD;
+			sstresh = default_THRESHOLD;
 			loss = 0.01;
-			status = tcp_slowstart;
+			status = tcp_begin;
 			dupACK = 0;
 		}
 };
