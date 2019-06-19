@@ -139,6 +139,7 @@ void Tcpconnect::slowstart(){
 				ssthresh = cwnd / 2;
 				cwnd = MSS;
 				dupACK = 0;
+				printstatslowstart=1;
 			}
 		break;
 		case tcp_congestionavoid:
@@ -174,7 +175,7 @@ void Tcpconnect::mySend(Packet packet, bool safemode){
 	if(pt[packet.packet_type()]=="DATA")
 		++isloss; //while lost at the 4th data pack (4096byte)
 	//if no loss
-	if(isloss!=4 && isloss!=64 || safemode) sendto(hostfd, &packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, sizeof(destSocket) );
+	if(isloss!=4 && isloss%66!=65 || safemode) sendto(hostfd, &packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, sizeof(destSocket) );
 	//if loss
 	else{
 		cout << "unfortunately packet(" << pt[packet.packet_type()] << ") was lost during transmit." << endl <<
@@ -204,20 +205,21 @@ bool Tcpconnect::isNewAck(const Packet recv_packet){
 
 Packet Tcpconnect::myRecv(int* timeout, const bool isclient){
 	Packet recv_packet;
-	socklen_t packetSize = sizeof(destSocket);
+	socklen_t packetSize = sizeof(destSocket)/4;
 	
 	//usleep( (this->RTT >> 1) * 1000);
 	
 	//UDP recv
 	do{
-		cout << "debug: isclient : timeout : " << isclient << endl << *timeout << endl;
+		//cout << "debug: isclient : timeout : " << isclient << endl << *timeout << endl;
 		
 		*timeout = recvfrom(hostfd, &recv_packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, &packetSize);
 		
 	}while(isclient && *timeout==-1);
-	cout << "intcp debug: " << *timeout << endl;
+	//cout << "intcp debug: " << *timeout << endl;
 	if(*timeout == -1){
 		cout << "Timeout\n";
+		isNewACK = false;
 		return Packet();
 	}
 	map<packetType,string> pt;

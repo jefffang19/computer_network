@@ -128,7 +128,7 @@ int Server::sendfile(const char *data, const int dataSize){
 			child.isTimeout = false;
 			recv_packet = child.myRecv(&timeout,false);
 			
-			cout << "debug: timeouted: " << timeout << endl;
+			//cout << "debug: timeouted: " << timeout << endl;
 			
 			if(timeout==-1){
 				cout << "debug: isTimeout " << endl;
@@ -144,7 +144,7 @@ int Server::sendfile(const char *data, const int dataSize){
 				datastart += child.MSS;
 				++segmentcnt;
 			}
-			cout << "debug: end\n";
+			//cout << "debug: end\n";
 			child.slowstart();
 		}
 	}

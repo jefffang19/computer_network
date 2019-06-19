@@ -60,7 +60,7 @@ class Tcpconnect {
 			cwnd = MSS;
 			recv_wnd = default_BUFFER_SIZE;
 			RTT = default_RTT; 
-			ssthresh = 4096; //smaller to let congestion control happen
+			ssthresh = 8192; //smaller to let congestion control happen
 			loss = 0.01;
 			status = tcp_begin;
 			dupACK = 0;
