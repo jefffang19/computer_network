@@ -48,14 +48,13 @@ class Tcpconnect {
 		void myConnect(const char* destip, int destport);
 		void mySend(Packet packet, bool safemode = false);
 		void slowstart();
-		Packet myRecv();
+		Packet myRecv(int *timeout, const bool isclient = false);
 		int disconnet();
 		string addr(const struct sockaddr_in socket);
 		bool isNewAck(const Packet recv_packet);
 		void updateNum(const Packet recv_packet);
 		bool packetLost();
 		void printslowstart();
-		Packet timeout_recv(int timeout_sec, Tcpconnect tcp); //the version of recv with timeout
 		Tcpconnect(){
 			MSS = default_MSS;
 			cwnd = MSS;

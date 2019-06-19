@@ -89,6 +89,13 @@ void Tcpconnect::myCreateSocket(const char* srcip, int srcport){
     	return;
     }
     printf("socket create successful\nSrcIP: %s\nSrcPort: %d\n",srcip,srcport);
+    
+    //set timeout
+    struct timeval tout;
+    tout.tv_sec = 5;
+    tout.tv_usec = 0;
+    if(setsockopt(hostfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tout,sizeof(tout)) < 0)
+    	fprintf(stderr,"setsockopt fail\n");
 }
 
 void Tcpconnect::myConnect(const char* destip, int destport){
@@ -119,68 +126,34 @@ void Tcpconnect::printslowstart(){
 void Tcpconnect::slowstart(){
 	//slowstart
 	switch(this->status){
-		case tcp_begin:
-			this->status = tcp_slowstart;
-			printstatslowstart=0;
-			break;
 		case tcp_slowstart:
 			if(cwnd>=ssthresh){
 				this->status = tcp_congestionavoid;
 				printstatslowstart=2;
 			}
-			else if(dupACK==3){
-				this->status = tcp_fastrecover;
-				printstatslowstart=3;
-				ssthresh = cwnd / 2;
-				cwnd = ssthresh + 3 * MSS;
-			}
 			else if(isNewACK){
 				cwnd += MSS;
 				dupACK = 0;
 			}
-			else if(isDupACK) ++dupACK;
-			else if(isTimeout){
+			else if(isTimeout){ cout << "debug: slowstart\n";
 				ssthresh = cwnd / 2;
 				cwnd = MSS;
 				dupACK = 0;
 			}
 		break;
 		case tcp_congestionavoid:
-			if(isTimeout){
+			if(isTimeout){ cout << "debug: cong\n";
 				this->status = tcp_slowstart;
 				printstatslowstart=1;
 				ssthresh = cwnd / 2;
 				cwnd = MSS;
 				dupACK = 0;
-			}
-			else if(isDupACK) ++dupACK;
-			else if(dupACK==3){
-				this->status = tcp_fastrecover;
-				printstatslowstart=3;
-				ssthresh = cwnd / 2;
-				cwnd = ssthresh + 3*MSS;
 			}
 			else if(isNewACK){
 				cwnd = cwnd + MSS * (MSS * 1.0/ cwnd);
 				dupACK = 0;
 			}
 		break;		
-		case tcp_fastrecover:
-			if(isTimeout){
-				this->status = tcp_slowstart;
-				printstatslowstart=1;
-				ssthresh = cwnd / 2;
-				cwnd = MSS;
-				dupACK = 0;
-			}
-			else if(isNewACK){
-				this->status = tcp_congestionavoid;
-				printstatslowstart=2;
-				cwnd = ssthresh;
-				dupACK = 0;
-			}
-			else if(isDupACK) cwnd += MSS;
-		break;
 	}
 	
 	return;
@@ -197,8 +170,11 @@ void Tcpconnect::mySend(Packet packet, bool safemode){
 	pt[packet_data] = "DATA";
 	if(pt[packet.packet_type()] != "DATA") cout << "Send a packet(" << pt[packet.packet_type()] << ") to " << addr(destSocket) << endl;
 	
+	//now with loss
+	if(pt[packet.packet_type()]=="DATA")
+		++isloss; //while lost at the 4th data pack (4096byte)
 	//if no loss
-	if(true||safemode) sendto(hostfd, &packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, sizeof(destSocket) );
+	if(isloss!=4 && isloss!=64 || safemode) sendto(hostfd, &packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, sizeof(destSocket) );
 	//if loss
 	else{
 		cout << "unfortunately packet(" << pt[packet.packet_type()] << ") was lost during transmit." << endl <<
@@ -226,16 +202,23 @@ bool Tcpconnect::isNewAck(const Packet recv_packet){
 
 
 
-Packet Tcpconnect::myRecv(){
+Packet Tcpconnect::myRecv(int* timeout, const bool isclient){
 	Packet recv_packet;
 	socklen_t packetSize = sizeof(destSocket);
 	
-	usleep( (this->RTT >> 1) * 1000);
+	//usleep( (this->RTT >> 1) * 1000);
 	
 	//UDP recv
-	if(recvfrom(hostfd, &recv_packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, &packetSize)<0){
-		perror("error recvfrom");
-		exit(1);
+	do{
+		cout << "debug: isclient : timeout : " << isclient << endl << *timeout << endl;
+		
+		*timeout = recvfrom(hostfd, &recv_packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, &packetSize);
+		
+	}while(isclient && *timeout==-1);
+	cout << "intcp debug: " << *timeout << endl;
+	if(*timeout == -1){
+		cout << "Timeout\n";
+		return Packet();
 	}
 	map<packetType,string> pt;
 	pt[packet_syn] = "SYN";
@@ -252,6 +235,7 @@ Packet Tcpconnect::myRecv(){
 	return recv_packet;
 }
 
+/*
 Tcpconnect temptcp;
 Packet timeout_recv_thread();
 Packet timeout_recv_wrap(int timeout_sec, Tcpconnect tcp);
@@ -285,6 +269,7 @@ Packet timeout_recv_thread(){
 	recv_packet = temptcp.myRecv();
 	return recv_packet;
 }
+*/
 
 bool Tcpconnect::packetLost(){
 	//0.05 loss

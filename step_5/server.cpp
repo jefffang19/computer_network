@@ -96,7 +96,7 @@ int Server::sendfile(const char *data, const int dataSize){
 		//transmit
 		if(child.status==tcp_begin){
 			child.printstatslowstart=1;
-			child.status==tcp_slowstart;
+			child.status=tcp_slowstart;
 		}
 		child.printslowstart();
 		
@@ -107,28 +107,32 @@ int Server::sendfile(const char *data, const int dataSize){
 			Packet t(packetType::packet_data, this->child, tmparr, child.MSS);
 			t.header.seqNum+=i;
 			t.header.ackNum+=i;
+			/*cout << "debug before send\ndatalen: " << datalen << "packetsize: " << sizeof(t) << endl;
+			cout << "debug seq ack : " << t.header.seqNum << " " << t.header.ackNum << endl;*/
 			child.mySend(t);
 		}
 		cout << "\tsend: " << MSScnt << " MSS\n";
 		
+		int timeout;
 		//acks
 		for(int i=0;i<MSScnt;++i){
 			//only print last ack
-			if(i==MSScnt-1) child.doprintrcv=true;
-			else child.doprintrcv=false;
+			/*if(i==MSScnt-1) child.doprintrcv=true;
+			else child.doprintrcv=false;*/
+			child.doprintrcv=true;
 			
 			Packet recv_packet;
 			//use timeoutable recv()
 			//timeout 5 sec
-			bool timeout = false;
+			timeout = 0;
 			child.isTimeout = false;
-			try{ recv_packet = child.timeout_recv(5, this->child); }
-			catch(runtime_error &e){
-				cout << e.what() << endl;
-				timeout = true;
+			recv_packet = child.myRecv(&timeout,false);
+			
+			cout << "debug: timeouted: " << timeout << endl;
+			
+			if(timeout==-1){
+				cout << "debug: isTimeout " << endl;
 				child.isTimeout = true;
-			}
-			if(timeout){
 				child.slowstart();
 				break;
 			}
@@ -138,9 +142,9 @@ int Server::sendfile(const char *data, const int dataSize){
 				child.updateNum(recv_packet);
 				datalen = datalen - child.MSS;
 				datastart += child.MSS;
-				++segmentcnt; 
+				++segmentcnt;
 			}
-			
+			cout << "debug: end\n";
 			child.slowstart();
 		}
 	}
