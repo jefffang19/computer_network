@@ -8,6 +8,7 @@ int request_file[5];
 
 void wfile(int num);
 
+
 int main(){
 	srand(time(NULL));
 	
@@ -70,19 +71,24 @@ void Client::initInfo(){
 }
 void Client::recvfile(){
 	bool isEnd = false;
-
+	int isEvenNum = 0;
+	
 	while(!isEnd){
 		cout << "Listening\n";
 		Packet recv_packet = child.myRecv();
+		
 		//cout << "Receive file from " << child.addr(child.destSocket) << endl;
 		if(recv_packet.packet_type() == packet_data) {
 				// if new ack then recv, else ignore
 				if(child.isNewAck(recv_packet)){
-					for(int i = 0;i<child.MSS;++i) fileBuffer[i] = recv_packet.data[i];
-					for(int i = 0;i<child.MSS;++i) out.push_back(fileBuffer[i]);
+					for(int i = 0;i<recv_packet.header.recv_wnd;++i) fileBuffer[i] = recv_packet.data[i];
+					for(int i = 0;i<recv_packet.header.recv_wnd;++i) out.push_back(fileBuffer[i]);
 					child.updateNum(recv_packet);
+					++isEvenNum;
 				}
-				child.mySend(Packet(packet_ack,this->child,(char*)NULL));
+				//only send 1 ack for every 2 reciecved pacekt
+				cout << "debug: " << child.seqNum << endl;
+				if(isEvenNum%2 == 0) child.mySend(Packet(packet_ack,this->child,(char*)NULL));
 		}
 		//when the ack packet of threeway handshake loss
 		else if(recv_packet.packet_type() == packet_synack){
@@ -96,3 +102,4 @@ void Client::recvfile(){
 	}
 	cout << "got file len = " << out.size() << "bytes" << endl;
 }
+

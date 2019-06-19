@@ -19,7 +19,7 @@ class Server {
 	public:
 		Server_process child;
 		char fileBuffer[default_BUFFER_SIZE];
-
+		
 		Server();
 		void initInfo();
 		void printStatus();

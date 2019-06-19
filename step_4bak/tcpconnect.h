@@ -40,26 +40,23 @@ class Tcpconnect {
 		tcpstate status;
 		//slow start status
 		bool isTimeout, isNewACK, isDupACK;
-		int printstatslowstart;
-		bool doprintrcv;
 		
 		void myCreateSocket(const char* srcip, int srcport);
 		void myConnect(const char* destip, int destport);
 		void mySend(Packet packet, bool safemode = false);
-		void slowstart();
 		Packet myRecv();
 		int disconnet();
 		string addr(const struct sockaddr_in socket);
 		bool isNewAck(const Packet recv_packet);
 		void updateNum(const Packet recv_packet);
 		bool packetLost();
-		void printslowstart();
+		void slowstart();
 		Packet timeout_recv(int timeout_sec, Tcpconnect tcp); //the version of recv with timeout
 		Tcpconnect(){
-			MSS = default_MSS;
+			MSS = 1;
 			cwnd = MSS;
 			recv_wnd = default_BUFFER_SIZE;
-			RTT = default_RTT; 
+			RTT = default_RTT;
 			ssthresh = 4096; //smaller to let congestion control happen
 			loss = 0.01;
 			status = tcp_begin;
@@ -67,8 +64,6 @@ class Tcpconnect {
 			isTimeout = false;
 			isNewACK = false;
 			isDupACK = false;
-			doprintrcv = true;
-			printstatslowstart = 0;
 		}
 };
 

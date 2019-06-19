@@ -32,11 +32,8 @@ int main(){
 	*/
 	
 	//if is master child, keep listen for new client's SYN
-	while(myServer.child.masterchild){
-	 return 0;
-	 myServer.child.inithandshake();
+	while(myServer.child.masterchild) myServer.child.inithandshake();
 	//if not master child, send video file
-	}
 	
 	if(!myServer.child.masterchild){
 		//read video 1.mp4
@@ -53,7 +50,6 @@ int main(){
 
 Server::Server(){
 	this->child.masterchild = true; //the child of server class is master child
-	strcpy(fileBuffer,"hello world");
 }
 
 void Server::initInfo(){
@@ -80,7 +76,7 @@ int Server::sendfile(const char *data, const int dataSize){
 	int datastart = 0,
 		datalen = dataSize,
 		segmentcnt = 0, //count how much segement divided
-		MSScnt = 1;
+		isEvenNum = 0;
 	
 	while(datalen > 0){
 		char segmentdata[child.cwnd+5];  //divide data into segements of length MSS
@@ -91,34 +87,16 @@ int Server::sendfile(const char *data, const int dataSize){
 			for(int i=0;i<child.cwnd;++i) segmentdata[i] = data[i+datastart];
 		}
 		
-		MSScnt = child.cwnd/child.MSS;
-		cout << "debug: cwnd, MSS: " << child.cwnd << " " << child.MSS << endl;
+		Packet tmp(packetType::packet_data, this->child, segmentdata, child.cwnd);
+		tmp.header.recv_wnd = child.cwnd;
+		cout << "debug: " << tmp.header.recv_wnd << endl;
+		child.mySend(tmp);
+		++isEvenNum;
 		
-		//transmit
-		if(child.status==tcp_begin){
-			child.printstatslowstart=1;
-			child.status==tcp_slowstart;
-		}
-		child.printslowstart();
-		
-		printf("cwnd = %d MSS, rwnd = %d, threshold = %d\n",MSScnt,child.recv_wnd,child.ssthresh);
-		for(int i=0;i<MSScnt;++i){
-			char tmparr[child.cwnd];
-			for(int j=0;j<child.cwnd;++j) tmparr[j]=segmentdata[j + child.MSS*i];
-			Packet t(packetType::packet_data, this->child, tmparr, child.MSS);
-			t.header.seqNum+=i;
-			t.header.ackNum+=i;
-			child.mySend(t);
-			cout << "debug: seq: " << t.header.seqNum << endl;
-		}
-		cout << "\tsend: " << MSScnt << " MSS\n";
-		
-		//acks
-		for(int i=0;i<MSScnt;++i){
-			//only print last ack
-			if(i==MSScnt-1) child.doprintrcv=true;
-			else child.doprintrcv=false;
-			
+		//you don't need to recv ack on odd times
+		if(isEvenNum%2 == 0){
+			child.isNewACK = false;
+			//now wait for ack from client
 			Packet recv_packet;
 			//use timeoutable recv()
 			//timeout 5 sec
@@ -130,18 +108,33 @@ int Server::sendfile(const char *data, const int dataSize){
 				timeout = true;
 				child.isTimeout = true;
 			}
-			if(timeout) continue; //resend
-		
-			// if new ack then recv, else ignore, and don't - datalen
-			else if(child.isNewAck(recv_packet)){
+
+			// if new ack with num+2 then recv
+			if(child.isNewAck(recv_packet) && !timeout){
 				child.updateNum(recv_packet);
-				datalen = datalen - child.MSS;
-				datastart += child.MSS;
+				datalen = datalen - child.cwnd;
+				datastart += child.cwnd;
 				++segmentcnt; 
 			}
-			
-			child.slowstart();
+			// if timeout or else
+			else{
+				datalen += child.cwnd;
+				datastart -= child.cwnd;
+				--segmentcnt;
+				child.seqNum-=child.cwnd;
+				child.ackNum--;
+				continue; //resend 2 packet
+			}
 		}
+		else{
+			datalen = datalen - child.cwnd;
+			datastart += child.cwnd;
+			++segmentcnt;
+			child.seqNum+=child.cwnd; cout << "debug seq: " << tmp.header.seqNum << endl;
+			child.ackNum++;
+			child.isNewACK = true;
+		}
+		child.slowstart();	
 	}
 	child.mySend(Packet(packetType::packet_fin, this->child, NULL));
 	return segmentcnt;

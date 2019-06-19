@@ -99,93 +99,6 @@ void Tcpconnect::myConnect(const char* destip, int destport){
     printf("Set destination socket\nDestIP: %s\nDestPort: %d\n",destip,destport);
 }
 
-void Tcpconnect::printslowstart(){
-	switch(this->printstatslowstart){
-		case 1:
-			cout << "*****Slow start*****\n";
-		break;
-		case 2:
-			cout << "*****Congestion avoidance*****\n";
-		break;
-		case 3:
-			cout << "*****Fast recover*****\n";
-		break;
-	}
-	
-	this->printstatslowstart = 0;
-	return;
-}
-
-void Tcpconnect::slowstart(){
-	//slowstart
-	switch(this->status){
-		case tcp_begin:
-			this->status = tcp_slowstart;
-			printstatslowstart=0;
-			break;
-		case tcp_slowstart:
-			if(cwnd>=ssthresh){
-				this->status = tcp_congestionavoid;
-				printstatslowstart=2;
-			}
-			else if(dupACK==3){
-				this->status = tcp_fastrecover;
-				printstatslowstart=3;
-				ssthresh = cwnd / 2;
-				cwnd = ssthresh + 3 * MSS;
-			}
-			else if(isNewACK){
-				cwnd += MSS;
-				dupACK = 0;
-			}
-			else if(isDupACK) ++dupACK;
-			else if(isTimeout){
-				ssthresh = cwnd / 2;
-				cwnd = MSS;
-				dupACK = 0;
-			}
-		break;
-		case tcp_congestionavoid:
-			if(isTimeout){
-				this->status = tcp_slowstart;
-				printstatslowstart=1;
-				ssthresh = cwnd / 2;
-				cwnd = MSS;
-				dupACK = 0;
-			}
-			else if(isDupACK) ++dupACK;
-			else if(dupACK==3){
-				this->status = tcp_fastrecover;
-				printstatslowstart=3;
-				ssthresh = cwnd / 2;
-				cwnd = ssthresh + 3*MSS;
-			}
-			else if(isNewACK){
-				cwnd = cwnd + MSS * (MSS / cwnd);
-				dupACK = 0;
-			}
-		break;		
-		case tcp_fastrecover:
-			if(isTimeout){
-				this->status = tcp_slowstart;
-				printstatslowstart=1;
-				ssthresh = cwnd / 2;
-				cwnd = MSS;
-				dupACK = 0;
-			}
-			else if(isNewACK){
-				this->status = tcp_congestionavoid;
-				printstatslowstart=2;
-				cwnd = ssthresh;
-				dupACK = 0;
-			}
-			else if(isDupACK) cwnd += MSS;
-		break;
-	}
-	
-	return;
-}
-
 void Tcpconnect::mySend(Packet packet, bool safemode){
 	if(safemode) cout << "NO loss mode : on\n";
 	
@@ -195,7 +108,11 @@ void Tcpconnect::mySend(Packet packet, bool safemode){
 	pt[packet_synack] = "SYNACK";
 	pt[packet_fin] = "FIN";
 	pt[packet_data] = "DATA";
-	if(pt[packet.packet_type()] != "DATA") cout << "Send a packet(" << pt[packet.packet_type()] << ") to " << addr(destSocket) << endl;
+	
+	if(pt[packet.packet_type()]=="DATA"){
+		cout << "Send a packet at : " << cwnd << " bytes\n";
+	}
+	else cout << "Send a packet(" << pt[packet.packet_type()] << ") to " << addr(destSocket) << endl;
 	
 	//now with loss
 	//if no loss
@@ -209,7 +126,7 @@ void Tcpconnect::mySend(Packet packet, bool safemode){
 
 void Tcpconnect::updateNum(const Packet recv_packet){
 	this->seqNum = recv_packet.header.ackNum;
-	this->ackNum = recv_packet.header.seqNum + 1;
+	this->ackNum = recv_packet.header.seqNum + recv_packet.header.recv_wnd;
 }
 
 bool Tcpconnect::isNewAck(const Packet recv_packet){
@@ -231,13 +148,13 @@ Packet Tcpconnect::myRecv(){
 	Packet recv_packet;
 	socklen_t packetSize = sizeof(destSocket);
 	
+	// wait half RTT time before recieve
 	usleep( (this->RTT >> 1) * 1000);
 	
+	
 	//UDP recv
-	if(recvfrom(hostfd, &recv_packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, &packetSize)<0){
-		perror("error recvfrom");
-		exit(1);
-	}
+	recvfrom(hostfd, &recv_packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, &packetSize);
+	
 	map<packetType,string> pt;
 	pt[packet_syn] = "SYN";
 	pt[packet_ack] = "ACK";
@@ -246,10 +163,9 @@ Packet Tcpconnect::myRecv(){
 	pt[packet_data] = "DATA";
 	packetType recvpt = recv_packet.packet_type();
 	if( recvpt == packet_syn) cout << "=====start three-way handshake=====" << endl;
-	if(doprintrcv){
-		cout << "Receive a packet(" << pt[recvpt] << ") from " << addr(destSocket) << endl;
-		cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
-	}	
+	cout << "Receive a packet(" << pt[recvpt] << ") from " << addr(destSocket) << endl;
+	cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
+			
 	return recv_packet;
 }
 
@@ -288,13 +204,83 @@ Packet timeout_recv_thread(){
 }
 
 bool Tcpconnect::packetLost(){
-	//0.05 loss
+	//0.05% loss
 	if(rand()%10000 < (loss*100)) return true;
 	else return false;
 }
 
 int Tcpconnect::disconnet(){
 	close(hostfd);
+}
+
+void Tcpconnect::slowstart(){
+	//slowstart
+	switch(this->status){
+		case tcp_begin:
+			this->status = tcp_slowstart;
+			cout << "*****Slow start*****\n";
+			break;
+		case tcp_slowstart:
+			if(cwnd>=ssthresh){
+				this->status = tcp_congestionavoid;
+				cout << "*****Congestion avoidance*****\n";
+			}
+			else if(isDupACK==3){
+				this->status = tcp_fastrecover;
+				cout << "*****Fast recover*****\n";
+				ssthresh = cwnd / 2;
+				cwnd = ssthresh + 3 * MSS;
+			}
+			else if(isNewACK){
+				cwnd *= 2;
+				dupACK = 0;
+			}
+			else if(isDupACK) ++dupACK;
+			else if(isTimeout){
+				ssthresh = cwnd / 2;
+				cwnd = MSS;
+				dupACK = 0;
+			}
+		break;
+		case tcp_congestionavoid:
+			if(isTimeout){
+				this->status = tcp_slowstart;
+				cout << "*****Slow start*****\n";
+				ssthresh = cwnd / 2;
+				cwnd = MSS;
+				dupACK = 0;
+			}
+			else if(isDupACK) ++dupACK;
+			else if(isDupACK==3){
+				this->status = tcp_fastrecover;
+				cout << "*****Fast recover*****\n";
+				ssthresh = cwnd / 2;
+				cwnd = ssthresh + 3;
+			}
+			else if(isNewACK){
+				cwnd = cwnd + MSS * (MSS / cwnd);
+				dupACK = 0;
+			}
+		break;		
+		case tcp_fastrecover:
+			if(isTimeout){
+				this->status = tcp_slowstart;
+				cout << "*****Slow start*****\n";
+				ssthresh = cwnd / 2;
+				cwnd = 1;
+				dupACK = 0;
+			}
+			else if(isNewACK){
+				this->status = tcp_congestionavoid;
+				cout << "*****Congestion avoidance*****\n";
+				cwnd = ssthresh;
+				dupACK = 0;
+			}
+			else if(isDupACK) cwnd += MSS;
+		break;
+	}
+	printf("\tcwnd = %d, rwnd = %d, threshold = %d\n",cwnd,recv_wnd,ssthresh);
+	return;
 }
 
 string Tcpconnect::addr(const struct sockaddr_in socket){
