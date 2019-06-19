@@ -8,10 +8,9 @@ void Server_process::inithandshake(){
 	cout << "Listening to client\n";
 	while(!endhs){
 		Packet recv_packet;
-		timeout = 999;
+		timeout = 0;
 	
 		recv_packet = myRecv(&timeout,true);
-		cout << "debug i shold not be here\n";
 		
 		if(timeout==-1 && !first) mySend(Packet(packetType::packet_synack, *this, (char*)NULL)); //resend SYNACK
 		else{

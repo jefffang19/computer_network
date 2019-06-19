@@ -13,12 +13,12 @@ int main(){
 	
 	Client myclient;
 	
-	cout << "input # client ";
-	cin >> numbth_client;
-	cout << "request how many files ";
-	cin >> num_of_files;
-	cout << "request video file number ";
-	for(int i = 0;i < num_of_files;++i) cin >> request_file[i];
+	cout << "input # client : 1\n";
+	numbth_client = 1;
+	cout << "request how many files : 1\n";
+	num_of_files = 1;
+	cout << "request video file number : 3\n";
+	for(int i = 0;i < num_of_files;++i) request_file[i] = 3;
 	
 	//set src ip and port
 	myclient.child.myCreateSocket(client_ip,client_port[numbth_client-1]);

@@ -19,7 +19,6 @@ Packet::Packet(){
 	this->header.FIN = false;
 	this->header.recv_wnd = 0;
 	this->header.checksum = 0;
-	/*debug*/
 	strcpy(this->data,"hello world!");
 }
 
@@ -92,7 +91,7 @@ void Tcpconnect::myCreateSocket(const char* srcip, int srcport){
     
     //set timeout
     struct timeval tout;
-    tout.tv_sec = 5;
+    tout.tv_sec = 1;
     tout.tv_usec = 0;
     if(setsockopt(hostfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tout,sizeof(tout)) < 0)
     	fprintf(stderr,"setsockopt fail\n");
@@ -135,7 +134,7 @@ void Tcpconnect::slowstart(){
 				cwnd += MSS;
 				dupACK = 0;
 			}
-			else if(isTimeout){ cout << "debug: slowstart\n";
+			else if(isTimeout){
 				ssthresh = cwnd / 2;
 				cwnd = MSS;
 				dupACK = 0;
@@ -143,7 +142,7 @@ void Tcpconnect::slowstart(){
 			}
 		break;
 		case tcp_congestionavoid:
-			if(isTimeout){ cout << "debug: cong\n";
+			if(isTimeout){
 				this->status = tcp_slowstart;
 				printstatslowstart=1;
 				ssthresh = cwnd / 2;
@@ -205,18 +204,16 @@ bool Tcpconnect::isNewAck(const Packet recv_packet){
 
 Packet Tcpconnect::myRecv(int* timeout, const bool isclient){
 	Packet recv_packet;
-	socklen_t packetSize = sizeof(destSocket)/4;
+	socklen_t packetSize = sizeof(destSocket);
 	
 	//usleep( (this->RTT >> 1) * 1000);
 	
 	//UDP recv
 	do{
-		//cout << "debug: isclient : timeout : " << isclient << endl << *timeout << endl;
-		
 		*timeout = recvfrom(hostfd, &recv_packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, &packetSize);
 		
 	}while(isclient && *timeout==-1);
-	//cout << "intcp debug: " << *timeout << endl;
+	
 	if(*timeout == -1){
 		cout << "Timeout\n";
 		isNewACK = false;
