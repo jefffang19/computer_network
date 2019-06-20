@@ -192,7 +192,7 @@ Packet timeout_recv_thread(){
 }
 
 bool Tcpconnect::packetLost(){
-	//50% loss
+	//0.05% loss
 	if(rand()%10000 < (loss*100)) return true;
 	else return false;
 }

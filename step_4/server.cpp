@@ -109,15 +109,16 @@ int Server::sendfile(const char *data, const int dataSize){
 			Packet t(packetType::packet_data, this->child, tmparr, child.MSS);
 			t.header.seqNum+=i;
 			t.header.ackNum+=i;
-			child.mySend(t);
+			
+			child.mySend(t,1);
 		}
 		cout << "\tsend: " << MSScnt << " MSS\n";
 		
 		//acks
-		for(int i=0;i<MSScnt;++i){
+		for(int i=0 ;i<MSScnt;++i){
 			
-			//you don't need to recv ack on odd times
-			if(i%2 == 0){
+			//you don't need to recv ack on odd times, but recv when last
+			if(i%2 || MSScnt==1){
 				Packet recv_packet;
 				
 				//use timeoutable recv()
@@ -130,24 +131,22 @@ int Server::sendfile(const char *data, const int dataSize){
 					timeout = true;
 					child.isTimeout = true;
 				}
-				// if new ack then recv, else ignore, and don't - datalen
-				if(child.isNewAck(recv_packet)){
-					child.updateNum(recv_packet);
-					datalen = datalen - child.MSS;
-					datastart += child.MSS;
-					++segmentcnt; 
-				}
+				
+				if(child.isNewAck(recv_packet)) child.updateNum();
+				
 			}
-			else{
-				datalen = datalen - child.MSS;
-				datastart += child.MSS;
-				++segmentcnt; 
-				child.seqNum++;
-				child.ackNum++;
-			}
+			child.slowstart(i%2 == 0);
 			
-			child.slowstart(i%2);
+			
+			datalen = datalen - child.MSS;
+			datastart += child.MSS;
+			++segmentcnt;
+			
+			child.seqNum++;
+			child.ackNum++;
+
 		}
+		
 	}
 	child.mySend(Packet(packetType::packet_fin, this->child, NULL));
 	exit(1);

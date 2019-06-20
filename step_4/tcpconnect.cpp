@@ -188,7 +188,6 @@ void Tcpconnect::slowstart(int delayack){
 }
 
 void Tcpconnect::mySend(Packet packet, bool safemode){
-	if(safemode) cout << "NO loss mode : on\n";
 	
 	map<packetType,string> pt;
 	pt[packet_syn] = "SYN";
@@ -199,7 +198,7 @@ void Tcpconnect::mySend(Packet packet, bool safemode){
 	if(pt[packet.packet_type()] != "DATA") cout << "Send a packet(" << pt[packet.packet_type()] << ") to " << addr(destSocket) << endl;
 	
 	//if no loss
-	if(true||safemode) sendto(hostfd, &packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, sizeof(destSocket) );
+	if(safemode) sendto(hostfd, &packet, sizeof(Packet), 0, (struct sockaddr *) &destSocket, sizeof(destSocket) );
 	//if loss
 	else{
 		cout << "unfortunately packet(" << pt[packet.packet_type()] << ") was lost during transmit." << endl <<
@@ -224,7 +223,6 @@ bool Tcpconnect::isNewAck(const Packet recv_packet){
 		return true;
 	}
 }
-
 
 
 Packet Tcpconnect::myRecv(){
@@ -279,6 +277,11 @@ Packet timeout_recv_wrap(int timeout_sec, Tcpconnect tcp){
 			throw runtime_error("Timeout");
 	}
 	return recv_packet;
+}
+
+void Tcpconnect::updateNum(){
+	/*this->seqNum = recv_packet.header.ackNum;
+	this->ackNum = recv_packet.header.seqNum + 1;*/
 }
 
 Packet timeout_recv_thread(){

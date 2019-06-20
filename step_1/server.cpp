@@ -49,7 +49,7 @@ int main(){
 
 
 Server::Server(){
-	this->cwnd = 1;
+	this->cwnd = 1024;
 	this->recv_wnd = default_BUFFER_SIZE;
 	this->threshold = default_THRESHOLD;
 	this->dupACKcnt = 0;

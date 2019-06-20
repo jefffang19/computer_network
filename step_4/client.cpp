@@ -13,12 +13,12 @@ int main(){
 	
 	Client myclient;
 	
-	cout << "input # client ";
+	cout << "input # client 1\n";
 	numbth_client = 1;
-	cout << "request how many files ";
+	cout << "request how many files 1\n";
 	num_of_files = 1;
-	cout << "request video file number ";
-	for(int i = 0;i < num_of_files;++i) request_file[i] = 3;
+	cout << "request video file number 2\n";
+	for(int i = 0;i < num_of_files;++i) request_file[i] = 2;
 	
 	//set src ip and port
 	myclient.child.myCreateSocket(client_ip,client_port[numbth_client-1]);
@@ -47,7 +47,7 @@ void wfile(int num){
 	stringstream ss2;
 	ss2 << num;
 	string numf = ss2.str();
-	ofstream outf( "client" + n + "-out" + numf + ".mp4", ios::binary);
+	ofstream outf( "client" + n + "-out", ios::binary);
 	
 	char temp[out.size()];
 	for(int i=0;i<out.size();++i){
@@ -56,7 +56,7 @@ void wfile(int num){
 	copy(temp,temp+out.size(),ostreambuf_iterator<char>(outf));
 	outf.close();
 	
-	cout << "client" << n << "-out" << numf << ".mp4 created , size :" << out.size() << " bytes\n";
+	cout << "client" << n << "-out" << numf << ".mp4 created \n";
 }
 
 void Client::initInfo(){
@@ -96,5 +96,5 @@ void Client::recvfile(){
 			isEnd = true;
 		}
 	}
-	cout << "got file len = " << out.size() << "bytes" << endl;
+	cout << "Done" << endl;
 }

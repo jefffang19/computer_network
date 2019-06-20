@@ -77,7 +77,7 @@ void Server_process::inithandshake(){
 		case 0:
 			cout << "As a child, I am connected	to: " << addr(destSocket) << endl;
 			//remember to differ your child's port
-			myCreateSocket(server_ip,server_port+childcnt);
+			myCreateSocket(server_ip,server_port+childcnt+1);
 			break;
 		//parent
 		default:

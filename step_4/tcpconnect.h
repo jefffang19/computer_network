@@ -46,13 +46,14 @@ class Tcpconnect {
 		
 		void myCreateSocket(const char* srcip, int srcport, int silence = 1);
 		void myConnect(const char* destip, int destport);
-		void mySend(Packet packet, bool safemode = false);
+		void mySend(Packet packet, bool safemode = true);
 		void slowstart(int delayack=0);
 		Packet myRecv();
 		int disconnet();
 		string addr(const struct sockaddr_in socket);
 		bool isNewAck(const Packet recv_packet);
 		void updateNum(const Packet recv_packet);
+		void updateNum();
 		bool packetLost();
 		void printslowstart();
 		Packet timeout_recv(int timeout_sec, Tcpconnect tcp); //the version of recv with timeout
