@@ -135,8 +135,9 @@ void Tcpconnect::slowstart(){
 				dupACK = 0;
 			}
 			
-			if(isDupACK){ dupACK++; cout << "debug ++dupack\n";}
+			if(isDupACK){ dupACK++; }
 			if(dupACK==3){
+				cout << "*****Fast retransmit*****\n";
 				ssthresh = cwnd / 2;
 				cwnd = MSS;
 				dupACK = 0;
@@ -151,6 +152,7 @@ void Tcpconnect::slowstart(){
 			}
 			if(dupACK==3){
 				this->status = tcp_slowstart;
+				cout << "*****Fast retransmit*****\n";
 				printstatslowstart=1;
 				ssthresh = cwnd / 2;
 				cwnd = MSS;
