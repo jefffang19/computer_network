@@ -134,20 +134,28 @@ void Tcpconnect::slowstart(){
 				cwnd += MSS;
 				dupACK = 0;
 			}
-			else if(isTimeout){
+			
+			if(isDupACK){ dupACK++; cout << "debug ++dupack\n";}
+			if(dupACK==3){
 				ssthresh = cwnd / 2;
 				cwnd = MSS;
 				dupACK = 0;
 				printstatslowstart=1;
+				return;
 			}
 		break;
 		case tcp_congestionavoid:
-			if(isTimeout){
+			
+			if(isDupACK){
+				++dupACK;
+			}
+			if(dupACK==3){
 				this->status = tcp_slowstart;
 				printstatslowstart=1;
 				ssthresh = cwnd / 2;
 				cwnd = MSS;
 				dupACK = 0;
+				return;
 			}
 			else if(isNewACK){
 				cwnd = cwnd + MSS * (MSS * 1.0/ cwnd);
@@ -182,9 +190,13 @@ void Tcpconnect::mySend(Packet packet, bool safemode){
 	}
 }
 
-void Tcpconnect::updateNum(const Packet recv_packet){
-	this->seqNum = recv_packet.header.ackNum;
-	this->ackNum = recv_packet.header.seqNum + 1;
+bool Tcpconnect::updateNum(const Packet recv_packet){
+	if(this->seqNum == recv_packet.header.ackNum - 1){
+		this->seqNum = recv_packet.header.ackNum;
+		this->ackNum = recv_packet.header.seqNum + 1;
+		return true;
+	}
+	else return false;
 }
 
 bool Tcpconnect::isNewAck(const Packet recv_packet){
@@ -206,7 +218,7 @@ Packet Tcpconnect::myRecv(int* timeout, const bool isclient){
 	Packet recv_packet;
 	socklen_t packetSize = sizeof(destSocket);
 	
-	//usleep( (this->RTT >> 1) * 1000);
+	usleep( (this->RTT >> 1) * 1000);
 	
 	//UDP recv
 	do{
@@ -227,10 +239,10 @@ Packet Tcpconnect::myRecv(int* timeout, const bool isclient){
 	pt[packet_data] = "DATA";
 	packetType recvpt = recv_packet.packet_type();
 	if( recvpt == packet_syn) cout << "=====start three-way handshake=====" << endl;
-	if(doprintrcv){
+	//if(doprintrcv || !isNewAck(recv_packet)){
 		cout << "Receive a packet(" << pt[recvpt] << ") from " << addr(destSocket) << endl;
 		cout << "\treceive a packet ( seq num = " << recv_packet.header.seqNum << ", " << "ack num = " << recv_packet.header.ackNum << ")\n";
-	}	
+	//}	
 	return recv_packet;
 }
 

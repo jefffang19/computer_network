@@ -60,7 +60,7 @@ class Tcpconnect {
 			MSS = default_MSS;
 			cwnd = MSS;
 			recv_wnd = default_BUFFER_SIZE;
-			RTT = default_RTT; 
+			RTT = 50; //50ms 
 			ssthresh = 4096; //smaller to let congestion control happen
 			loss = 0.01;
 			status = tcp_begin;

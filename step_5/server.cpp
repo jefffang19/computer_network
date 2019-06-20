@@ -52,6 +52,7 @@ int main(){
 
 Server::Server(){
 	this->child.masterchild = true; //the child of server class is master child
+	this->child.seqNum = -1;
 	strcpy(fileBuffer,"hello world");
 }
 
@@ -110,9 +111,9 @@ int Server::sendfile(const char *data, const int dataSize){
 		}
 		cout << "\tsend: " << MSScnt << " MSS\n";
 		
-		int timeout;
+		int timeout, i=0;
 		//acks
-		for(int i=0;i<MSScnt;++i){
+		while(i < MSScnt){
 			//only print last ack
 			if(i==MSScnt-1) child.doprintrcv=true;
 			else child.doprintrcv=false;
@@ -122,23 +123,20 @@ int Server::sendfile(const char *data, const int dataSize){
 			//timeout 5 sec
 			timeout = 0;
 			child.isTimeout = false;
-			recv_packet = child.myRecv(&timeout,false);
+			recv_packet = child.myRecv(&timeout,true);
 			
-			
-			if(timeout==-1){
-				child.isTimeout = true;
-				child.slowstart();
-				break;
-			}
-		
-			// if new ack then recv, else ignore, and don't - datalen
-			else if(child.isNewAck(recv_packet)){
+			// if new ack then go to newack, else goto dupack++, and don't - datalen
+			if(child.isNewAck(recv_packet)){
 				child.updateNum(recv_packet);
 				datalen = datalen - child.MSS;
 				datastart += child.MSS;
 				++segmentcnt;
 			}
 			child.slowstart();
+			
+			//if back to slow start ; break
+			if(child.printstatslowstart==1) break;
+			else if(child.dupACK==0){ ++i; }
 		}
 	}
 	child.mySend(Packet(packetType::packet_fin, this->child, NULL));

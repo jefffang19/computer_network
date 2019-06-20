@@ -52,7 +52,7 @@ class Tcpconnect {
 		int disconnet();
 		string addr(const struct sockaddr_in socket);
 		bool isNewAck(const Packet recv_packet);
-		void updateNum(const Packet recv_packet);
+		bool updateNum(const Packet recv_packet);
 		bool packetLost();
 		void printslowstart();
 		Tcpconnect(){
