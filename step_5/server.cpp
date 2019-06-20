@@ -83,6 +83,7 @@ int Server::sendfile(const char *data, const int dataSize){
 		MSScnt = 1;
 	
 	while(datalen > 0){
+	
 		char segmentdata[child.cwnd+5];  //divide data into segements of length MSS
 		if(datalen < child.cwnd){
 			for(int i=0;i<datalen;++i) segmentdata[i] = data[i+datastart];

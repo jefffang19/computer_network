@@ -14,11 +14,11 @@ int main(){
 	Client myclient;
 	
 	cout << "input # client ";
-	cin >> numbth_client;
+	numbth_client = 1;
 	cout << "request how many files ";
-	cin >> num_of_files;
+	num_of_files = 1;
 	cout << "request video file number ";
-	for(int i = 0;i < num_of_files;++i) cin >> request_file[i];
+	for(int i = 0;i < num_of_files;++i) request_file[i] = 3;
 	
 	//set src ip and port
 	myclient.child.myCreateSocket(client_ip,client_port[numbth_client-1]);
@@ -70,6 +70,7 @@ void Client::initInfo(){
 }
 void Client::recvfile(){
 	bool isEnd = false;
+	int isOddNum = 1;
 
 	while(!isEnd){
 		cout << "Listening\n";
@@ -81,8 +82,9 @@ void Client::recvfile(){
 					for(int i = 0;i<child.MSS;++i) fileBuffer[i] = recv_packet.data[i];
 					for(int i = 0;i<child.MSS;++i) out.push_back(fileBuffer[i]);
 					child.updateNum(recv_packet);
+					++isOddNum;
 				}
-				child.mySend(Packet(packet_ack,this->child,(char*)NULL));
+				if(isOddNum%2 == 0) child.mySend(Packet(packet_ack,this->child,(char*)NULL));
 		}
 		//when the ack packet of threeway handshake loss
 		else if(recv_packet.packet_type() == packet_synack){

@@ -73,10 +73,10 @@ Packet::Packet(packetType type, Tcpconnect tcp, const char* indata, int indataSi
 //tcp network part
 
 
-void Tcpconnect::myCreateSocket(const char* srcip, int srcport){
+void Tcpconnect::myCreateSocket(const char* srcip, int srcport, int silence){
 	// create socket failed
 	if((hostfd = socket(AF_INET,SOCK_DGRAM,0)) == -1){
-		fprintf(stderr,"socket create failed\n");
+		if(!silence) fprintf(stderr,"socket create failed\n");
 		return;
 	}
 	memset((char*)&srcSocket,0,sizeof(srcSocket));
@@ -84,17 +84,17 @@ void Tcpconnect::myCreateSocket(const char* srcip, int srcport){
     this->srcSocket.sin_addr.s_addr = inet_addr(srcip);
     this->srcSocket.sin_port = srcport;
     if( (bind(hostfd, (struct sockaddr *)&srcSocket, sizeof(srcSocket) ) )== -1){
-    	fprintf(stderr,"bind socket failed\n");
+    	if(!silence) fprintf(stderr,"bind socket failed\n");
     	return;
     }
-    printf("socket create successful\nSrcIP: %s\nSrcPort: %d\n",srcip,srcport);
+    if(!silence) printf("socket create successful\nSrcIP: %s\nSrcPort: %d\n",srcip,srcport);
     
     //set timeout
     struct timeval tout;
     tout.tv_sec = 1;
     tout.tv_usec = 0;
     if(setsockopt(hostfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tout,sizeof(tout)) < 0)
-    	fprintf(stderr,"setsockopt fail\n");
+    	if(!silence) fprintf(stderr,"setsockopt fail\n");
 }
 
 void Tcpconnect::myConnect(const char* destip, int destport){

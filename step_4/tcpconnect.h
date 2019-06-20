@@ -44,10 +44,10 @@ class Tcpconnect {
 		int printstatslowstart;
 		bool doprintrcv;
 		
-		void myCreateSocket(const char* srcip, int srcport);
+		void myCreateSocket(const char* srcip, int srcport, int silence = 1);
 		void myConnect(const char* destip, int destport);
 		void mySend(Packet packet, bool safemode = false);
-		void slowstart();
+		void slowstart(int delayack=0);
 		Packet myRecv();
 		int disconnet();
 		string addr(const struct sockaddr_in socket);

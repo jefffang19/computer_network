@@ -74,10 +74,10 @@ Packet::Packet(packetType type, Tcpconnect tcp, const char* indata, int indataSi
 //tcp network part
 
 
-void Tcpconnect::myCreateSocket(const char* srcip, int srcport){
+void Tcpconnect::myCreateSocket(const char* srcip, int srcport, int silence){
 	// create socket failed
 	if((hostfd = socket(AF_INET,SOCK_DGRAM,0)) == -1){
-		fprintf(stderr,"socket create failed\n");
+		if(!silence) fprintf(stderr,"socket create failed\n");
 		return;
 	}
 	memset((char*)&srcSocket,0,sizeof(srcSocket));
@@ -85,10 +85,10 @@ void Tcpconnect::myCreateSocket(const char* srcip, int srcport){
     this->srcSocket.sin_addr.s_addr = inet_addr(srcip);
     this->srcSocket.sin_port = srcport;
     if( (bind(hostfd, (struct sockaddr *)&srcSocket, sizeof(srcSocket) ) )== -1){
-    	fprintf(stderr,"bind socket failed\n");
+    	if(!silence) fprintf(stderr,"bind socket failed\n");
     	return;
     }
-    printf("socket create successful\nSrcIP: %s\nSrcPort: %d\n",srcip,srcport);
+    if(!silence) printf("socket create successful\nSrcIP: %s\nSrcPort: %d\n",srcip,srcport);
 }
 
 void Tcpconnect::myConnect(const char* destip, int destport){
@@ -96,7 +96,6 @@ void Tcpconnect::myConnect(const char* destip, int destport){
     this->destSocket.sin_family = AF_INET;
     this->destSocket.sin_addr.s_addr = inet_addr(destip);
     this->destSocket.sin_port = destport;
-    printf("Set destination socket\nDestIP: %s\nDestPort: %d\n",destip,destport);
 }
 
 void Tcpconnect::printslowstart(){
@@ -116,7 +115,8 @@ void Tcpconnect::printslowstart(){
 	return;
 }
 
-void Tcpconnect::slowstart(){
+void Tcpconnect::slowstart(int delayack){
+	if(delayack) isNewACK = true;
 	//slowstart
 	switch(this->status){
 		case tcp_begin:
@@ -183,6 +183,7 @@ void Tcpconnect::slowstart(){
 		break;
 	}
 	
+	if(delayack) isNewACK = false;
 	return;
 }
 

@@ -80,8 +80,10 @@ int Server::sendfile(const char *data, const int dataSize){
 		datalen = dataSize,
 		segmentcnt = 0, //count how much segement divided
 		MSScnt = 1;
+	child.doprintrcv=true;
 	
 	while(datalen > 0){
+	
 		char segmentdata[child.cwnd+5];  //divide data into segements of length MSS
 		if(datalen < child.cwnd){
 			for(int i=0;i<datalen;++i) segmentdata[i] = data[i+datastart];
@@ -96,7 +98,7 @@ int Server::sendfile(const char *data, const int dataSize){
 		//transmit
 		if(child.status==tcp_begin){
 			child.printstatslowstart=1;
-			child.status==tcp_slowstart;
+			child.status=tcp_slowstart;
 		}
 		child.printslowstart();
 		
@@ -113,35 +115,38 @@ int Server::sendfile(const char *data, const int dataSize){
 		
 		//acks
 		for(int i=0;i<MSScnt;++i){
-			//only print last ack
-			if(i==MSScnt-1) child.doprintrcv=true;
-			else child.doprintrcv=false;
 			
-			Packet recv_packet;
-			//use timeoutable recv()
-			//timeout 5 sec
-			bool timeout = false;
-			child.isTimeout = false;
-			try{ recv_packet = child.timeout_recv(5, this->child); }
-			catch(runtime_error &e){
-				cout << e.what() << endl;
-				timeout = true;
-				child.isTimeout = true;
+			//you don't need to recv ack on odd times
+			if(i%2 == 0){
+				Packet recv_packet;
+				
+				//use timeoutable recv()
+				//timeout 5 sec
+				bool timeout = false;
+				child.isTimeout = false;
+				try{ recv_packet = child.timeout_recv(5, this->child); }
+				catch(runtime_error &e){
+					cout << e.what() << endl;
+					timeout = true;
+					child.isTimeout = true;
+				}
+				// if new ack then recv, else ignore, and don't - datalen
+				if(child.isNewAck(recv_packet)){
+					child.updateNum(recv_packet);
+					datalen = datalen - child.MSS;
+					datastart += child.MSS;
+					++segmentcnt; 
+				}
 			}
-			if(timeout){
-				child.slowstart();
-				break;
-			}
-		
-			// if new ack then recv, else ignore, and don't - datalen
-			else if(child.isNewAck(recv_packet)){
-				child.updateNum(recv_packet);
+			else{
 				datalen = datalen - child.MSS;
 				datastart += child.MSS;
 				++segmentcnt; 
+				child.seqNum++;
+				child.ackNum++;
 			}
 			
-			child.slowstart();
+			child.slowstart(i%2);
 		}
 	}
 	child.mySend(Packet(packetType::packet_fin, this->child, NULL));

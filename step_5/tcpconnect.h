@@ -44,7 +44,7 @@ class Tcpconnect {
 		int printstatslowstart;
 		bool doprintrcv;
 		
-		void myCreateSocket(const char* srcip, int srcport);
+		void myCreateSocket(const char* srcip, int srcport, int silence=0);
 		void myConnect(const char* destip, int destport);
 		void mySend(Packet packet, bool safemode = false);
 		void slowstart();
